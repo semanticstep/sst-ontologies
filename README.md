@@ -26,10 +26,10 @@ The following ontology files are embedded in this module:
 | `lci` | `ontologies/lci/lci.ttl` | Life-cycle integration ontology |
 | `owl` | `ontologies/owl/owl.ttl` | OWL ontology definitions |
 | `qau` | `ontologies/qau/qau.ttl` | Quantities and units ontology |
-| `rdf` | `ontologies/rdf/rdf.ttl` | RDF ontology definitions |
-| `rdfs` | `ontologies/rdfs/rdfs.ttl` | RDFS ontology definitions |
+| `rdf` | `ontologies/rdf/22-rdf-syntax-ns.ttl` | RDF ontology definitions |
+| `rdfs` | `ontologies/rdfs/rdf-schema.ttl` | RDFS ontology definitions |
 | `rep` | `ontologies/rep/rep.ttl` | Representation ontology |
-| `sh` | `ontologies/sh/sh.ttl` | SHACL ontology definitions |
+| `sh` | `ontologies/sh/shacl.ttl` | SHACL ontology definitions |
 | `skos` | `ontologies/skos/skos.ttl` | SKOS ontology definitions |
 | `ssmeta` | `ontologies/ssmeta/ssmeta.ttl` | SST meta ontology |
 | `sso` | `ontologies/sso/sso.ttl` | Semantic STEP ontology |
@@ -40,7 +40,7 @@ The following ontology files are embedded in this module:
 This is a Go module that embeds all ontology files via `embed.FS`:
 
 ```go
-import "git.semanticstep.net/x/sst-ontologies"
+import "github.com/semanticstep/sst-ontologies"
 
 // Access embedded ontology files
 content, err := ontologies.FS.ReadFile("ontologies/sso/sso.ttl")
