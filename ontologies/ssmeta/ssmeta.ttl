@@ -26,6 +26,11 @@ ssmeta:OptionClass
 ssmeta:AbstractClass
     rdf:type owl:Class .
 
+# a class representing a STEP IR/AIM/MIM entity that needs to be supported by data exchange, 
+# but that is not a valid SST class 
+ssmeta:DummyStepIrClass
+    rdf:type owl:Class .
+
 ssmeta:ConnotationalClass
     rdf:type owl:Class .
 
@@ -41,6 +46,14 @@ ssmeta:AbstractProperty
 ssmeta:ofType rdf:type owl:ObjectProperty ;
     rdfs:domain rdf:List ;
     rdfs:label "of member type"@en .
+
+ssmeta:flag
+    a rdfs:Datatype ;
+	rdfs:label "flag" ;
+    owl:onDatatype xsd:boolean ;
+    owl:withRestrictions (
+        owl:oneOf ( true )
+       ) .
 
 # to indicate that a class is not intended to have direct members, but only through sub-classes
 ssmeta:isAbstract
@@ -66,6 +79,7 @@ ssmeta:SelectClass
     rdf:type owl:Class ;
     owl:disjointUnionOf (ssmeta:MainClass ssmeta:OptionClass ssmeta:AbstractClass) .
 
+# ?? used ??
 ssmeta:externalMap
     rdf:type owl:DatatypeProperty ;
     rdfs:subPropertyOf rdfs:label ;
@@ -113,7 +127,7 @@ ssmeta:stepImMapAttributeOrder
 ssmeta:StepImMapAttributeSpecial
     rdf:type owl:NamedIndividual .
 
-# ssmeta:stepImMapSupertypeOrder identifies the supertypes of a STEP entity in the specifiy order.
+# ssmeta:stepImMapSupertypeOrder identifies in case of multiple inheritance the order of supertypes of a STEP entity.
 # This order is needed to map values of entity attributes from STEP p21 files
 ssmeta:stepImMapSupertypeOrder
     rdf:type owl:ObjectProperty ;

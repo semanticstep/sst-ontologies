@@ -21,7 +21,7 @@
 
 :FunctionalDefinition
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 :FunctionalDefinitionElement
 	rdf:type owl:Class , ssmeta:MainClass ;
@@ -37,7 +37,7 @@
 
 :FunctionalOccurrence
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 :FunctionalOccurrenceTerminal
 	rdf:type owl:Class , ssmeta:MainClass ;
@@ -164,7 +164,7 @@
 # :MasterPort is not abstract, same as unspecified_direction_master_port
 :MasterPort
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 # ENTITY input_master_port
 #      SUBTYPE OF (master_port);                                     
@@ -198,7 +198,7 @@
 #  ENTITY master_port_bundle
 :MasterPortBundle
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 # ENTITY local_master_port_group;
 

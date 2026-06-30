@@ -19,7 +19,8 @@
 
 <http://ontology.semanticstep.net/lci>
 	rdf:type     owl:Ontology ;
-	owl:versionInfo "0.01" .
+	owl:versionInfo "0.01" ;
+	owl:imports <http://ontology.semanticstep.net/ssmeta>.
 
 #############  SST management, not part of ISO/TS 15926-12:2018 ###################
 
@@ -31,8 +32,8 @@
 lci:isDefinedBy
 	rdf:type owl:ObjectProperty , owl:FunctionalProperty , owl:IrreflexiveProperty ;
 	rdfs:subPropertyOf rdfs:isDefinedBy ;
-	rdfs:domain lci:SpaceTimeIndividual ;
-	rdfs:range lci:SpaceTimeIndividual .
+	rdfs:domain lci:Individual ;
+	rdfs:range lci:Individual .
 lci:isDefinitionFor 
 	owl:inverseOf lci:isDefinedBy .
 
@@ -79,36 +80,13 @@ lci:Thing
 # 5.2.6 Possible individuals
 lci:Individual
 	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf lci:Thing ;
 	owl:disjointUnionOf (
-		lci:SpaceTimeIndividual 
-		lci:OmnipresentIndividual
-	) ;
-	skos:definition "The class of individuals that do not exist in space and time and that and that have no variations defined in 4D" ;
-	skos:prefLabel "individual" .
-
-# SST only
-lci:OmnipresentIndividual
-	rdf:type owl:Class , ssmeta:MainClass ;
-#	owl:disjointUnionOf (
-#		lci:State
-#		lci:OmnipresentIndividualEnumeration
-#		rdfs:Literal) ;
-	skos:definition "The class of individuals that do not exist in space and time and that and that have no variations defined in 4D" ;
-	skos:prefLabel "other individual" .
-
-# OK ISO 15926-2: 5.2.6.11 possible_individual 
-# Name has been changed from "possible individual" because the class includes actual individuals as well as possible, but not actual ones.
-lci:SpaceTimeIndividual
-	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:Individual ;
-	owl:disjointUnionOf (
-		lci:PhysicalObject 
+		lci:PhysicalObject
 		lci:Activity
-		lci:Event
 		lci:InformationObject
-#		lci:PointOrRegionInSpaceAndTime   # is treated as a PhysicalObject
 	) ;
-	skos:definition "The class of SpaceTimeIndividuals that exists in space and time and that may have variations defined in 4D" ;
+	skos:definition "The class of Individuals that exists in space and time and that may have variations defined in 4D" ;
 	skos:prefLabel "space-time individual" ;
 	skos:scopeNote "This class includes: things where any of the space-time dimensions are vanishingly small; things that are either all space for a period of time, or all time for a region of space; the entirety of all space-time; things that actually exist, or have existed; things that are fictional or conjectured and possibly exist in the past, present or future; temporal parts (states) of other SpaceTimeIndividuals; things that have a specific position, but zero extent in one or more dimensions, such as points, lines, and surfaces." .
 
@@ -120,33 +98,33 @@ lci:AbstractObject
 	skos:prefLabel "abstract object" ;
 	skos:scopeNote "An <AbstractObject> does not exist in space and time, and does not have properties or relationships that change. Most instances of <AbstractObject> are classes, but there are a few mostly to do with mathematics that are not." .
 
-#############  Top SpaceTimeIndividuals ###################
+#############  Top Individuals ###################
 
 # OK ISO 15926-2: 5.2.6.2 arranged_individual
 lci:ArrangedIndividual
 	rdf:type owl:Class , ssmeta:OptionClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	owl:disjointWith lci:Non-arrangedIndividual ;
 	skos:definition "<Individual> that has parts with a particular organization or arrangement" ;
 	skos:prefLabel "arranged space-time individual" ;
 	skos:scopeNote "The properties, characteristics and behaviours of an <ArrangedIndividual> are different from those of its individual parts." .
 lci:Non-arrangedIndividual
 	rdf:type owl:Class , ssmeta:OptionClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	skos:definition "<Individual> that is not an <ArrangedIndividual>" ;
 	skos:example "The 2015 production run of pump model 'WBX-456A' a <PhysicalObject> and a <Non-arrangedIndividual>. A particular pump within the production run is an <ArrangedIndividual>." ;
 	skos:prefLabel "non-arranged space-time individual" .
 
 lci:SpecificIndividual
 	rdf:type owl:Class , ssmeta:OptionClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	owl:disjointWith lci:TypicalIndividual ;
 	skos:definition "<SpaceTimeIndividual> that exist or may exist at a specific space and time" ;
 	skos:example "my bycicle that is of a specific model and has a specific serial number" ;
 	skos:prefLabel "specific space-time individual" .
 lci:TypicalIndividual
 	rdf:type owl:Class , ssmeta:OptionClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	skos:definition "<SpaceTimeIndividual> that does not exist at a specifc space and time and that can therefore be used for several other SpaceTimeIndividuals as definition" ;
 	skos:example "A particular model of a bycicle of which many SpecificIndividuals exist" ;
 	skos:prefLabel "typical space-time individual" .
@@ -169,14 +147,14 @@ lci:Non-actualIndividual
 # OK ISO 15926-2: 5.2.6.15 whole_life_individual
 lci:WholeLifeIndividual
 	rdf:type owl:Class , ssmeta:OptionClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	owl:disjointWith lci:Non-wholeLifeIndividual ;
 	skos:definition "<Individual> that is a that is an entire lifetime as defined by its basis for identity" ;
 	skos:example "The plastic cup on the desk of Fred Bloggs (bounded by its creation and destruction events) is a <WholeLifeIndividual>. The cup whilst it stands on that desk is a temporal part of the <WholeLifeIndividual>." ;
 	skos:prefLabel "whole life space-time individual" .
 lci:Non-wholeLifeIndividual
 	rdf:type owl:Class , ssmeta:OptionClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	skos:definition "<Individual> that is not an <WholeLifeIndividual>" ;
 	skos:example "The temporal part of the pump with serial number 'P-98/1234' that is installed as pump tag '20-P-101' is a <MaterializedPhysicalObject> and a <Non-wholeLifeIndividual>. The temporal part of pump tag '20-P-101' that has the pump with serial number 'P-98/1234' installed is a <FunctionalPhysicalObject> and a <Non-wholeLifeIndividual>." ;
 	skos:prefLabel "non-whole life space-time individual" .
@@ -184,7 +162,7 @@ lci:Non-wholeLifeIndividual
 # ISO 15926-2: 5.2.6.10 physical_object
 lci:PhysicalObject
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	owl:disjointUnionOf (
 		lci:Matter 
 #		lci:PhysicalField 
@@ -198,7 +176,7 @@ lci:PhysicalObject
 # ISO 15926-2: 5.2.9.1 activity
 lci:Activity
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	skos:definition "<Individual> that is something happening or changing" ;
 	skos:prefLabel "activity" ;
 	skos:scopeNote "An <Activity> is a space-time extension in which other instances of <Individual> and <Event> participate." .
@@ -206,7 +184,7 @@ lci:Activity
 # ISO 15926-2: 5.2.9.5 event     ?? Difference to PointInTime
 lci:Event
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	skos:definition "<Individual> that has zero extent in time" ;
 	skos:example "The connection of power to pump P_101 is an <Event>. This event that marks the beginning of a temporal part of pump P_101." ;
 	skos:prefLabel "event" ;
@@ -226,7 +204,7 @@ lci:PointOrPeriodInTime
 # ISO 15926-2: 5.2.9.8 point_in_time
 lci:PointInTime
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:PointOrPeriodInTime ;
+	rdfs:subClassOf lci:PointOrPeriodInTime , lci:Event ;
 	owl:disjointWith lci:PeriodInTime ;
 	skos:definition "<Individual> that is all that exists in space at an instant in time" ;
 	skos:example "1999-05-13T16:31:23.56Z' is an identification of a <PointInTime>, which is defined by ISO 8601." ;
@@ -289,21 +267,21 @@ lci:FunctionalPhysicalObject
 # This class has been derived from the power class defined in ISO 15926-2.
 lci:InanimateIndividual
 	rdf:type owl:Class , ssmeta:OptionClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	owl:disjointWith lci:AnimateIndividual ;
 	skos:definition "TBD" ;
 	skos:prefLabel "inanimate space-time individual" ;
 	skos:scopeNote "TBD" .
 lci:AnimateIndividual
 	rdf:type owl:Class , ssmeta:OptionClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	skos:definition "TBD" ;
 	skos:prefLabel "animate space-time individual" ;
 	skos:scopeNote "TBD" .
 
 # skip? ISO 15926-2: 5.2.6.8 materialised_physical_object
 lci:MaterializedPhysicalObject
-	rdf:type owl:Class , ssmeta:OptionClass ;
+	rdf:type owl:Class , ssmeta:OptionClass ; 
 	rdfs:subClassOf lci:PhysicalObject ;
 	skos:definition "<PhysicalObject> that has matter continuity, energy continuity of both as its basis of identity" ;
 	skos:example "The shell and tube heat exchanger with manufacture's serial number ES/1234 is a <MaterializedPhysicalObject>." ;
@@ -442,30 +420,30 @@ lci:SolidBody
 
 # added by SST
 lci:RigidBody
-	rdf:type owl:Class , ssmeta:MainClass ;
+	rdf:type owl:Class , ssmeta:OptionClass ;
 	rdfs:subClassOf lci:SolidBody ;
 	skos:definition "idealized <SolidBody> that does not deform under the influence of forces" ;
 	skos:prefLabel "rigid body" ;
 	skos:scopeNote "https://www.sciencedirect.com/topics/mathematics/solid-body" .
 
 lci:FlexibleBody
-	rdf:type owl:Class , ssmeta:MainClass ;
+	rdf:type owl:Class , ssmeta:OptionClass ;
 	rdfs:subClassOf lci:SolidBody ;
 	skos:definition "<SolidBody> whose purpose is to undergo elastic deformations." ;
 	skos:prefLabel "flexible body" ;
 	skos:example "coil spring, gasket and rubber band are examples of <FlexibleBody>" ;
 	skos:scopeNote "" .
 
-lci:FlexRigidBody
-	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SolidBody ;
-	skos:definition "<SolidBody> that is composed of different regions with rigid and flexible characteristics" ;
-	skos:prefLabel "flex-rigid body" ;
-	skos:example "A hose consisting of a flexible hollow tube and rigid house couplings at the end is an examples of <FlexRigidBody>" ;
-	skos:scopeNote "" .
+# lci:FlexRigidBody
+# 	rdf:type owl:Class , ssmeta:OptionClass ;
+# 	rdfs:subClassOf lci:SolidBody ;
+# 	skos:definition "<SolidBody> that is composed of different regions with rigid and flexible characteristics" ;
+# 	skos:prefLabel "flex-rigid body" ;
+# 	skos:example "A hose consisting of a flexible hollow tube and rigid house couplings at the end is an examples of <FlexRigidBody>" ;
+# 	skos:scopeNote "" .
 
 lci:KinematicBody
-	rdf:type owl:Class , ssmeta:MainClass ;
+	rdf:type owl:Class , ssmeta:OptionClass ;
 	rdfs:subClassOf lci:SolidBody ;
 	skos:definition "<SolidBody> whose rigid regions move according to defined kinematic joints relative to each other." ;
 	skos:prefLabel "kinematic body" ;
@@ -724,7 +702,7 @@ lci:InformationContent
 # This class has been derived from the power class defined in ISO 15926-2.
 lci:InformationObject
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual ;
+	rdfs:subClassOf lci:Individual ;
 	skos:definition "<Individual> that is intended to convey information" ;
 	skos:example "The following are members of <InformationObject>: the ink on paper material certificate for material product M-101-1234 produced by Schmidt Stahl, which bears the signature of the Schmidt Stahl inspector; the PDF file with URI http://schmidt-stahl.de/material-certificate/M-101-1234.pdf, which contains a scan of the ink on paper material certificate for M-101-1234; the XML file with URI http://schmidt-stahl.de/material-certificate/M-101-1234.xml, which contains the material certificate for M-101-1234 in accordance with the standard material certificate XML schema auto-gration_messages.xsd; the state of railway signal VS1234 between 10:02:30 and 10:02:45 on 2014-05-19" ;
 	skos:prefLabel "information object" .
@@ -1015,7 +993,7 @@ lci:representationByLiteral
 lci:representationSpaceAssignedBy
 	rdf:type owl:FunctionalProperty , owl:ObjectProperty ;
 	rdfs:domain lci:RepresentationSpace ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that is responsible for the representations" ;
 	skos:prefLabel "representation space has responsible" .
 
@@ -1023,7 +1001,7 @@ lci:representationSpaceAssignedBy
 lci:representationSpaceUsedBy
 	rdf:type owl:ObjectProperty ;
 	rdfs:domain lci:RepresentationSpace ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that uses the representations" ;
 	skos:prefLabel "representation space used by" .
 
@@ -1128,14 +1106,14 @@ lci:ClassOfEvent
 lci:ClassOfIndividual
 	rdf:type owl:Class , ssmeta:MainClass ;
 	rdfs:subClassOf lci:Class ;
-	lci:powerClassOf lci:SpaceTimeIndividual ;
+	lci:powerClassOf lci:Individual ;
 	skos:definition "class that is the power class of <Individual>" ;
 	skos:prefLabel "class of individual" ;
 	skos:scopeNote "An explanation of power class if given in ISO 15926-12 Clause B.3." .
 lci:ClassOfEnumeratedIndividuals
 	rdf:type owl:Class , ssmeta:MainClass ;
 	rdfs:subClassOf lci:ClassOfIndividual ;
-	lci:powerClassOf lci:SpaceTimeIndividual ;
+	lci:powerClassOf lci:Individual ;
 	skos:prefLabel "class of enumerated individuals" .
 
 ## ISO 15926-2: 5.2.14.1 class_of_class_of_relationship	
@@ -1238,8 +1216,8 @@ lci:ClassOfStatus
 # ISO 15926-2: 5.2.6.5 composition_of_individual
 lci:partOf
 	rdf:type owl:ObjectProperty , owl:TransitiveProperty ;
-	rdfs:domain lci:SpaceTimeIndividual ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that is a whole for the part" ;
 	skos:prefLabel "part of" .
 # ISO 15926-2: 5.2.6.5 composition_of_individual
@@ -1253,7 +1231,7 @@ lci:hasPart
 lci:arrangedPartOf
 	rdf:type owl:ObjectProperty , owl:TransitiveProperty ;
 	rdfs:subPropertyOf lci:partOf ;
-	rdfs:domain lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
 	rdfs:range lci:ArrangedIndividual ;
 	skos:definition "<ArrangedIndividual> that is a whole for the arranged part with a distinct role" ;
 	skos:example "Aircraft A_101 from 2014-04-11T10:50 to 2014-04-11T12:15 has an <arrangedPartOf> relationship with formation F_101 from 2014-04-11T10:50 to 2014-04-11T12:15, within which it is flying. Bin B_101 has an <arrangedPartOf> relationship with Warehouse W_101, within which it is a part of the layout." ;
@@ -1289,7 +1267,7 @@ lci:hasFeature
 lci:assembledPartOf
 	rdf:type owl:ObjectProperty , owl:TransitiveProperty ;
 	rdfs:subPropertyOf lci:arrangedPartOf ;
-	rdfs:domain lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
 	rdfs:range lci:ArrangedIndividual ;
 	skos:definition "<ArrangedIndividual> that is a whole for the assembled part" ;
 	skos:example "Impeller I_345 during 2013 has an <assembledPartOf> relationship with pump P_101 during 2013." ;
@@ -1308,7 +1286,7 @@ lci:begins
 	rdfs:subPropertyOf lci:temporalBoundOf ;
 	owl:propertyDisjointWith lci:ends ;
 	rdfs:domain lci:Event ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that begins" ;
 	skos:example "The <PointInTime> 1999-07-01T00:00 has a <begins> relationship with the <PeriodInTime> July 1999.The <Event> 'loading L_101 on 2014-04-11 complete' has a <begins> relationship with the <Individual> 'loading plant idle on 2014-04-11'." ;
 	skos:prefLabel "begins" .
@@ -1326,7 +1304,7 @@ lci:ends
 	rdf:type owl:ObjectProperty ;
 	rdfs:subPropertyOf lci:temporalBoundOf ;
 	rdfs:domain lci:Event ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that ends" ;
 	skos:example "The <PointInTime> 1999-07-01T00:00 has a <ends> relationship with the <PeriodInTime> June 1999.The <Event> 'loading L_101 on 2014-04-11 complete' has a <ends> relationship with the <Individual> 'loading plant operating on 2014-04-11'." ;
 	skos:prefLabel "ends" .
@@ -1358,7 +1336,7 @@ lci:hasCause
 lci:causesBeginningOf
 	rdf:type owl:ObjectProperty ;
 	rdfs:domain lci:Activity ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that has its beginning caused" ;
 	skos:example "Forging activity F_101 has a <causesBeginningOf> relationship with pump casing PC_101." ;
 	skos:prefLabel "causes beginning of" .
@@ -1408,7 +1386,7 @@ lci:valueCausesBeginningOfOccurrence
 lci:classCausesBeginningOfValue
 	rdf:type owl:ObjectProperty ;
 	rdfs:domain lci:ClassOfActivity ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "each member of the subject has a <causesBeginningOf> relationship with the object" ;
 	skos:prefLabel "class causes beginning of value" .
 # ISO 15926-2: 5.2.10.2 class_of_cause_of_beginning_of_class_of_individual # This property implements class_of_cause_of_beginning_of_class_of_individual in the OWL environment.
@@ -1423,7 +1401,7 @@ lci:valueHasCauseOfBeginningOccurrence
 lci:causesEndOf
 	rdf:type owl:ObjectProperty ;
 	rdfs:domain lci:Activity ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that has its end caused" ;
 	skos:example "Refurbishment activity R_101 has a <causesEndOf> relationship with Pump tag P_101, which is replaced by two pumps P_101A and P_101B." ;
 	skos:prefLabel "causes end of" .
@@ -1473,7 +1451,7 @@ lci:valueCausesEndOfOccurrence
 lci:classCausesEndOfValue
 	rdf:type owl:ObjectProperty ;
 	rdfs:domain lci:ClassOfActivity ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "each member of the subject has a <causesEndOf> relationship with the object" ;
 	skos:prefLabel "class causes end of value" .
 # ISO 15926-2: 5.2.10.3 class_of_cause_of_ending_of_class_of_individual 
@@ -1488,8 +1466,8 @@ lci:valueHasCauseOfEndOccurrence
 #  supertype of direct_connection, indirect_connection // error: missing in original lci, added SymmetricProperty
 lci:connectedTo
 	rdf:type owl:ObjectProperty , owl:SymmetricProperty ;
-	rdfs:domain lci:SpaceTimeIndividual ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that is connected directly or indirectly, such that matter, energy or load or a combination of these can be transferred" ;
 	skos:prefLabel "connected to" .
 # ISO 15926-2: 5.2.21.6 direct_connection / error: added subPropertyOf
@@ -1508,20 +1486,20 @@ lci:indirectlyConnectedTo
 	skos:prefLabel "indirectly connected to" .
 
 # ISO 15926-2: 5.2.21.8 individual_used_in_connection
-lci:SpaceTimeIndividualUsedInConnection
+lci:IndividualUsedInConnection
 	rdf:type owl:ObjectProperty ;
 	rdfs:domain [ # OWL restriction Class: all members must be subProperties of lci:connectedTo
 		a owl:Class , owl:Restriction ; # or lci:Class ?	
 		owl:onProperty rdfs:subPropertyOf ;
 		owl:allValuesFrom lci:connectedTo # resp- someValuesFrom # yes, good, but also not directly lci:directlyConnectedTo or lci:indirectlyConnectedTo
 	] ;
-	rdfs:range lci:SpaceTimeIndividual .
+	rdfs:range lci:Individual .
 
 # ISO 15926-2: 5.2.22.4 containment_of_individual
 lci:containedBy
 	rdf:type owl:ObjectProperty , owl:TransitiveProperty ;
-	rdfs:domain lci:SpaceTimeIndividual ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that contains, but does not have the contained as a part" ;
 	skos:example "The batch of oil B_101 during 2014-04-11 has a <containedBy> relationship with tank T_101 during 2014-04-11." ;
 	skos:prefLabel "contained by" .
@@ -1537,8 +1515,8 @@ lci:contains
 # was missing in ISO 15925-12 files
 lci:locatedRelativeTo
 	rdf:type owl:ObjectProperty , owl:SymmetricProperty ;
-	rdfs:domain lci:SpaceTimeIndividual ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that has a relative location" ;
 	skos:example "The level gauge I-L-101-2 has a <locatedRelativeTo> relationship with tank T_101." ;
 	skos:prefLabel "located relative to" ;
@@ -1547,8 +1525,8 @@ lci:locatedRelativeTo
 # ISO 15926-2: 5.2.22.6 temporal_sequence
 lci:before
 	rdf:type owl:ObjectProperty ;
-	rdfs:domain lci:SpaceTimeIndividual ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that is before and does not overlap" ;
 	skos:example "The <Individual> 'F_101 under construction' has a <before> relationship with the <Individual> 'F_101 under commissioning'." ;
 	skos:prefLabel "before" .
@@ -1581,7 +1559,7 @@ lci:references
 lci:participantIn
 	rdf:type owl:ObjectProperty ;
 	rdfs:subPropertyOf lci:partOf ;
-	rdfs:domain lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
 	rdfs:range lci:Activity ;
 	skos:definition "<Activity> that is participated in" ;
 	skos:example "Pump P_101 during 2002-12-02 has a <participantIn> relationship with the activity 'discharge of motor vessel Murex on 2002-12-02'." ;
@@ -1599,7 +1577,7 @@ lci:temporalBoundOf
 	rdf:type owl:ObjectProperty , ssmeta:AbstractClass ;
 	rdfs:subPropertyOf lci:temporalPartOf ;
 	rdfs:domain lci:Event ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that begins or ends" ;
 	skos:prefLabel "temporal bound of" .
 # ISO 15926-2: 5.2.9.10 temporal_bounding
@@ -1613,8 +1591,8 @@ lci:hasTemporalBound
 lci:temporalPartOf
 	rdf:type owl:ObjectProperty , owl:TransitiveProperty ;
 	rdfs:subPropertyOf lci:partOf ;
-	rdfs:domain lci:SpaceTimeIndividual ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
+	rdfs:range lci:Individual ;
 	skos:definition "<Individual> that is consists of the part and nothing else during a period of time or at an instant in time" ;
 	skos:prefLabel "temporal part of" ;
 	skos:scopeNote "Since <temporalPartOf> is transitive a hierarchy of temporal parts is possible, with a <WholeLifeIndividual> at the top." .
@@ -1638,7 +1616,7 @@ lci:classLocatedRelativeToOccurrence
 # This property implements class_of_relative_location in the OWL environment.
 lci:valueLocatedRelativeToOccurrence
 	rdf:type owl:ObjectProperty ;
-	rdfs:domain lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
 	rdfs:range lci:ClassOfIndividual ;
 	skos:definition "the subject has a <locatedRelativeTo> relationship with each member of the object" ;
 	skos:prefLabel "value connected to occurrence" .
@@ -1671,7 +1649,7 @@ lci:classBeforeOccurrence
 lci:classAfterValue
 	rdf:type owl:ObjectProperty ;
 	rdfs:domain lci:ClassOfIndividual ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "each member of the subject has a <after> relationship with the object" ;
 	skos:prefLabel "class after value" .
 # ISO 15926-2: 5.2.22.3 class_of_temporal_sequence 
@@ -1686,7 +1664,7 @@ lci:valueBeforeOccurrence
 # This property implements class_of_temporal_sequence in the OWL environment.
 lci:valueAfterOccurrence
 	rdf:type owl:ObjectProperty ;
-	rdfs:domain lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
 	rdfs:range lci:ClassOfIndividual ;
 	skos:definition "the subject has a <after> relationship with each member of the object" ;
 	skos:prefLabel "value after occurrence" .
@@ -1798,7 +1776,7 @@ lci:classHasEndValue
 # This property implements class_of_composition_of_individual in the OWL environment.
 lci:valuePartOfOccurrence
 	rdf:type owl:ObjectProperty ;
-	rdfs:domain lci:SpaceTimeIndividual ;
+	rdfs:domain lci:Individual ;
 	rdfs:range lci:ClassOfIndividual ;
 	skos:definition "the subject has a <partOf> relationship with each member of the object" ;
 	skos:prefLabel "value part of occurrence" .
@@ -1937,7 +1915,7 @@ lci:valueHasBeginningOccurrence
 lci:classPartOfValue
 	rdf:type owl:ObjectProperty ;
 	rdfs:domain lci:ClassOfIndividual ;
-	rdfs:range lci:SpaceTimeIndividual ;
+	rdfs:range lci:Individual ;
 	skos:definition "each member of the subject has a <partOf> relationship with the object" ;
 	skos:prefLabel "class part of value" .
 # ISO 15926-2: class_of_composition_of_individual # This property implements class_of_composition_of_individual in the OWL environment.

@@ -977,7 +977,7 @@ _:belQuantities
 :PropagationCoefficient
 	rdfs:label "propagation coefficient"@en ;
 	rdf:type owl:Class , ssmeta:MainClass , lci:PhysicalQuantityKind ;
-	rdfs:subClassOf :PropagationCoefficient .
+	rdfs:subClassOf :AttenuationCoefficient .
 # 3-25.a metre to the power minus one
 # generic
 

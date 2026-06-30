@@ -18,14 +18,15 @@
 @prefix ssmeta:   <http://ontology.semanticstep.net/ssmeta#> .
 @prefix rep:   <http://ontology.semanticstep.net/rep#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-# @prefix ssqau:      <http://ontology.semanticstep.net/ssqau#> .
+@prefix qau:      <http://ontology.semanticstep.net/qau#> .
 
 # Major difference to ISO/TS 15926-12
 # - FunctionalPhysicalObject is not used. A function is a conceptual non-physical thing on a design-level that might be related to a physical thing
 
 <http://ontology.semanticstep.net/sso>
         rdf:type     owl:Ontology ;
-        owl:imports   <http://ontology.semanticstep.net/lci> ;
+        owl:imports   <http://ontology.semanticstep.net/lci> ,
+			<http://ontology.semanticstep.net/qau> ;
         owl:versionInfo "0.01" .
 
 # => use lci:Organization instead
@@ -284,11 +285,14 @@ sso:TypicalPhysicalProduct
 	rdf:type owl:Class , ssmeta:MainClass ;
 	rdfs:subClassOf sso:Product .
 
-# ENTITY IndividualPart ... to keep in SST?
-sso:ProductAsIndividual
+# AP242 Domain Model: ENTITY IndividualPart 
+# Modular ARM AM1164: Product_as_Individual 
+# AP214: Physical_instance
+# MIM: product_category.name='physically realized product'}
+sso:SpecificPhysicalProduct
 	rdfs:label "ProductAsIndividual" ;
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:Individual .
+	rdfs:subClassOf lci:PhysicalObject , lci:SpecificIndividual , lci:MaterializedPhysicalObject .
 
 sso:InformationProduct
 	rdfs:label "InformationProduct" ;
@@ -323,6 +327,7 @@ sso:FunctionOccurrence
 	rdfs:subClassOf sso:BreakdownOccurrence .
 # IEC81346-1, rule 7: prefix b) "-" (HYPHEN-MINUS) when relating to the product aspect of the object;
 sso:ProductOccurrence
+	sso:id "-" ;
 	skos:prefLabel "product occurrence" ;
 	ssmeta:stepDmMap "Occurrence" ;
 	rdf:type owl:Class, ssmeta:MainClass ;
@@ -341,6 +346,13 @@ sso:TypeOccurrence
 	ssmeta:stepDmMap "Occurrence" ;
 	rdf:type owl:Class, ssmeta:MainClass ;
 	rdfs:subClassOf sso:BreakdownOccurrence .
+# IEC81346-50, rule 6.2.1: prefix "$"" (DOLLAR) when relating to the process aspect of the object;
+sso:ActivityOccurrence
+	sso:id "$" ;
+	skos:prefLabel "type occurrence" ;
+	ssmeta:stepDmMap "Occurrence" ;
+	rdf:type owl:Class, ssmeta:MainClass ;
+	rdfs:subClassOf sso:BreakdownOccurrence , lci:Activity .
 # sso:BreakdownOccurrence covers also other (user defined) types that are not product, function, location or type oriented:
 # IEC81346-1, rule 7: prefix a) "#" IEC81346-1, rule 7: prefix a) 
 sso:OtherOccurrence
@@ -823,9 +835,43 @@ sso:SpecificationItemCategoryList
 # 	AssignedTo : ProductClass;
 # END_ENTITY;
 
+
+# ENTITY ProductDesignAssociation;
+# 	Description : OPTIONAL DescriptorSelect;
+# 	ClassifiedAs : OPTIONAL SET[1:?] OF Classification;
+# 	AssociatedConfiguration : ProductConfiguration;
+# 	AssociatedDesign : PartVersion;
+# END_ENTITY;
+sso:productDesignAssociation
+	rdf:type owl:ObjectProperty ;
+	rdfs:domain sso:ProductConfiguration ;
+	rdfs:range  sso:GenericPart ;
+	skos:prefLabel "productDesignAssociation" .
+#	skos:definition "" .
+
+sso:productConfigurationAssociation
+	rdf:type owl:ObjectProperty ;
+	rdfs:domain sso:ProductConfiguration ;
+	owl:inverseOf sso:productDesignAssociation .
+
+# ENTITY ConfiguredAssemblyEffectivity;
+# 	Id : OPTIONAL IdentifierSelect;
+# 	Name : OPTIONAL DescriptorSelect;
+# 	Description : OPTIONAL DescriptorSelect;
+# 	ClassifiedAs : OPTIONAL SET[1:?] OF Classification;
+# 	ConfiguredElements : SET[1:?] OF AssemblyDesignSelect;
+# 	EffectivityDomain : OPTIONAL Effectivity;
+# 	ResolvedConfiguration : ProductDesignAssociation;
+# 	SameAs : OPTIONAL SET[1:?] OF Proxy;
+# END_ENTITY;
+
 ###################  Aspect / Shapes ######################
 
 # ENTITY ShapeFeatureDefinition
+##     ENTITY characterized_object;
+##		name : label;
+##		description : OPTIONAL text;
+##	  END_ENTITY; 
 # 	SUPERTYPE OF (ContactFeatureDefinition);
 # 	Id : OPTIONAL IdentifierSelect;
 # 	Name : DescriptorSelect;
@@ -835,9 +881,11 @@ sso:SpecificationItemCategoryList
 # 	ShapeFeatureType : OPTIONAL ShapeFeatureTypeEnum;
 # END_ENTITY;
 sso:ShapeFeatureDefinition
-	ssmeta:stepDmMap "ShapeFeatureDefinition" ;
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	ssmeta:stepDmMap "ShapeFeatureDefinition" ;
+	ssmeta:stepImAttributeMap "feature_definition" ;
+	rdfs:subClassOf lci:Individual ;
+	ssmeta:stepImMapAttributeOrder ( rdfs:label rdfs:comment ) .
 
 # ENTITY ContactFeatureDefinition
 # 	SUBTYPE OF(ShapeFeatureDefinition);
@@ -867,6 +915,8 @@ sso:contactFeatureDefinitionFitRelationship
 	rdfs:domain sso:ContactFeatureDefinition ;
 	rdfs:range sso:ContactFeatureDefinition .
 
+# non-STEP supertype for ShapeElement, SpecificationItem, SpecificationItemCategory
+# ToleranceZone, GeometricTolerance
 sso:Aspect
 	rdfs:label "Aspect" ;
 	rdf:type owl:Class , ssmeta:MainClass ;
@@ -1549,10 +1599,11 @@ sso:refDes81346_14_technical_system
 
 sso:GenericPart
 	rdfs:label "GenericPart" ;
-	rdf:type owl:Class , ssmeta:MainClass ;
+	rdf:type owl:Class , ssmeta:AbstractClass ;
 	rdfs:subClassOf
 		lci:TypicalIndividual , 
 		lci:MaterializedPhysicalObject;
+    owl:disjointUnionOf (sso:Part sso:PartSpecification) ;
 	skos:definition "non-actual materialized physical product offered to the market" .
 	
 
@@ -1628,7 +1679,7 @@ sso:hasProductDefinition
 # this supertype is not an ArrangedIndividual, so it has no features or any known identifyable parts
 sso:PartDefinition
         rdf:type owl:Class , ssmeta:MainClass ;
-        rdfs:subClassOf lci:SpaceTimeIndividual .
+        rdfs:subClassOf lci:Individual .
 
 sso:netWeight
 	skos:prefLabel "net weight" ;
@@ -2266,8 +2317,8 @@ sso:PlyAngleRepresentation
 # 	Related : Representation;
 # 	Definitional : BOOLEAN;
 # END_ENTITY;
-# => rep::representationRelationship
-# 
+# => rep:representationRelationship
+
 # ENTITY GeometryToTopologyModelAssociation
 # 	SUBTYPE OF(RepresentationRelationship);
 # 	Origin : SET[1:?] OF GeometryAssociationItemSelect;
@@ -2280,7 +2331,7 @@ sso:PlyAngleRepresentation
 # WR3: SELF\RepresentationRelationship.Definitional = FALSE;
 # END_ENTITY;
 # => rep:geometryToTopologyModelAssociation
-# 
+
 # ENTITY TopologyToGeometryModelAssociation
 # 	SUBTYPE OF(RepresentationRelationship);
 # 	Origin : SET[1:?] OF TopologyAssociationItemSelect;
@@ -2293,7 +2344,7 @@ sso:PlyAngleRepresentation
 # WR3: SELF\RepresentationRelationship.Definitional = FALSE;
 # END_ENTITY;
 # => rep:topologyToGeometryModelAssociation
-# 
+
 # ENTITY PlyOrientationAngle
 # 	ABSTRACT
 # 	SUPERTYPE OF (ONEOF(DrapedOrientationAngle, LaidOrientationAngle))
@@ -2305,17 +2356,17 @@ sso:PlyAngleRepresentation
 # 	ReinforcementDirection : ReinforcementOrientationBasis := SELF\RepresentationRelationship.Related;
 # END_ENTITY;
 # => TBD
-# 
+
 # ENTITY LaidOrientationAngle
 # 	SUBTYPE OF(PlyOrientationAngle);
 # END_ENTITY;
 # => TBD
-# 
+
 # ENTITY DrapedOrientationAngle
 # 	SUBTYPE OF(PlyOrientationAngle);
 # END_ENTITY;
 # => TBD
-# 
+
 # ENTITY GeometricRepresentationRelationship
 # 	ABSTRACT
 # 	SUPERTYPE OF (ONEOF(GeneralGeometricRepresentationRelationship, GeometricRepresentationRelationshipWithCartesianTransformation, GeometricRepresentationRelationshipWithPlacementTransformation, GeometricRepresentationRelationshipWithSameCoordinateSpace))
@@ -2323,13 +2374,13 @@ sso:PlyAngleRepresentation
 # 	SELF\RepresentationRelationship.Relating : GeometricRepresentationSelect;
 # 	SELF\RepresentationRelationship.Related : GeometricRepresentationSelect;
 # END_ENTITY;
-# 
+
 # ENTITY GeneralGeometricRepresentationRelationship
 # 	SUBTYPE OF(GeometricRepresentationRelationship);
 # 	RelationType : ClassSelect;
 # END_ENTITY;
 # => rep:shapeRepresentationRelationshipWithTransformation
-# 
+
 # ENTITY GeometricRepresentationRelationshipWithCartesianTransformation
 # 	SUBTYPE OF(GeometricRepresentationRelationship);
 # 	Transformation : CartesianTransformation;
@@ -2337,7 +2388,7 @@ sso:PlyAngleRepresentation
 # WR1: SELF\GeometricRepresentationRelationship.Relating.ContextOfItems :<>: SELF\GeometricRepresentationRelationship.Related.ContextOfItems;
 # END_ENTITY;
 # => rep:shapeRepresentationRelationshipWithCartesianTransformation
-# 
+
 # ENTITY GeometricRepresentationRelationshipWithPlacementTransformation
 # 	SUBTYPE OF(GeometricRepresentationRelationship);
 # 	Origin : AxisPlacement;
@@ -2346,7 +2397,7 @@ sso:PlyAngleRepresentation
 # WR1: SELF\GeometricRepresentationRelationship.Relating.ContextOfItems :<>: SELF\GeometricRepresentationRelationship.Related.ContextOfItems;
 # END_ENTITY;
 # => rep:shapeRepresentationRelationshipWithPlacementTransformation
-# 
+
 # ENTITY GeometricRepresentationRelationshipWithSameCoordinateSpace
 # 	SUBTYPE OF(GeometricRepresentationRelationship);
 # DERIVE
@@ -3845,7 +3896,7 @@ sso:TransitionCode_discontinuous
 sso:StratumTemplate
 	ssmeta:stepArmMap "Template_definition" ;
 	rdf:type owl:Class , ssmeta:AbstractClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual , lci:ArrangedIndividual .
+	rdfs:subClassOf lci:Individual , lci:ArrangedIndividual .
 
 sso:StratumStackTemplate
 	rdf:type owl:Class , ssmeta:AbstractClass ;
@@ -3884,19 +3935,19 @@ sso:PassageTechnologyAllocationToStackModel
 sso:AllocatedPassageMinimumAnnularRing
 	ssmeta:stepArmMap "Allocated_passage_minimum_annular_ring" ;
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 # see: ARM entity level EXPRESS-G diagram 2 of 5
 
 sso:StratumTechnologyOccurrence
 	ssmeta:stepArmMap "Stratum_technology_occurrence" ;
 	rdf:type owl:Class , ssmeta:AbstractClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 sso:StratumTechnologyOccurrenceRelationship
 	ssmeta:stepArmMap "Stratum_technology_occurrence_relationship" ;
 	rdf:type owl:Class , ssmeta:AbstractClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 
 
@@ -3905,12 +3956,12 @@ sso:StratumTechnologyOccurrenceRelationship
 sso:StratumSurfaceTechnology
 	ssmeta:stepArmMap "Stratum_surface_technology" ;
 	rdf:type owl:Class , ssmeta:AbstractClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 sso:StratumTechnology
 	ssmeta:stepArmMap "Stratum_technology" ;
 	rdf:type owl:Class , ssmeta:AbstractClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 
 
@@ -3919,7 +3970,7 @@ sso:StratumTechnology
 sso:PassageTechnology
 	ssmeta:stepArmMap "Passage_technology" ;
 	rdf:type owl:Class , ssmeta:AbstractClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 sso:DefaultViaDefinition
 	ssmeta:stepArmMap "Default_via_definition" ;
@@ -3965,7 +4016,7 @@ sso:LayeredInterconnectPanelDesign
 sso:Stratum
 	ssmeta:stepArmMap "" ;
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual , lci:ArrangedIndividual  .
+	rdfs:subClassOf lci:Individual , lci:ArrangedIndividual  .
 	
 sso:DesignLayerStratum
 	ssmeta:stepArmMap "Design_layer_stratum" ;
@@ -3985,14 +4036,14 @@ sso:DerivedStratum
 sso:InterStratumExtent
 	ssmeta:stepArmMap "Inter_stratum_extent" ;
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual , lci:ArrangedIndividual .
+	rdfs:subClassOf lci:Individual , lci:ArrangedIndividual .
 
 # see: ARM entity level EXPRESS-G diagram 5 of 14
 
 sso:StratumFeature
 	ssmeta:stepArmMap "Stratum_feature" ;
 	rdf:type owl:Class , ssmeta:MainClass ;
-	rdfs:subClassOf lci:SpaceTimeIndividual .
+	rdfs:subClassOf lci:Individual .
 
 sso:Conductor
 	ssmeta:stepArmMap "Conductor" ;
@@ -4030,3 +4081,2507 @@ sso:StratumFeatureTemplateComponent
 	rdfs:subClassOf sso:LaminateComponent .
 
 
+
+
+
+
+
+
+
+
+
+
+
+################# shape_tolerance_schema    --  ISO 10303-47 ############
+
+# SCHEMA shape_aspect_definition_schema ------------------------------------------------------------------------
+
+# TYPE datum_reference_modifier = EXTENSIBLE SELECT
+#    (datum_reference_modifier_with_value,
+#     simple_datum_reference_modifier);
+# END_TYPE;
+sso:DatumReferenceModifier
+	ssmeta:stepImSelectMap "datum_reference_modifier" ;
+	a owl:Class , ssmeta:SelectClass ;
+	owl:unionOf ( sso:DatumReferenceModifierWithValue sso:SimpleDatumReferenceModifier ) .
+
+# TYPE datum_reference_modifier_type = EXTENSIBLE ENUMERATION OF
+#    (circular_or_cylindrical,
+#     spherical,
+#     distance,
+#     projected);
+# END_TYPE;
+sso:DatumReferenceModifierType
+	a owl:Class , ssmeta:EnumerationClass ;
+	owl:oneOf ( 
+		sso:DatumReferenceModifierType_circular_or_cylindrical
+		sso:DatumReferenceModifierType_spherical
+		sso:DatumReferenceModifierType_distance
+		sso:DatumReferenceModifierType_projected ) .
+sso:DatumReferenceModifierType_circular_or_cylindrical
+	ssmeta:stepImEnumerationMap "datum_reference_modifier_type.circular_or_cylindrical" ;
+	a sso:DatumReferenceModifierType .
+sso:DatumReferenceModifierType_spherical
+	ssmeta:stepImEnumerationMap "datum_reference_modifier_type.spherical" ;
+	a sso:DatumReferenceModifierType .
+sso:DatumReferenceModifierType_distance
+	ssmeta:stepImEnumerationMap "datum_reference_modifier_type.distance" ;
+	a sso:DatumReferenceModifierType .
+sso:DatumReferenceModifierType_projected
+	ssmeta:stepImEnumerationMap "datum_reference_modifier_type.projected" ;
+	a sso:DatumReferenceModifierType .
+ 
+# TYPE limit_condition = ENUMERATION OF
+#    (maximum_material_condition,
+#     least_material_condition,
+#     regardless_of_feature_size);
+# END_TYPE;
+# => deprecated
+
+# TYPE shape_aspect_or_feature_definition = SELECT
+#    (feature_definition,
+#     shape_aspect);
+# END_TYPE;
+ 
+# TYPE simple_datum_reference_modifier = EXTENSIBLE ENUMERATION OF
+#    (free_state,
+#     basic,
+#     translation,
+#     least_material_requirement,
+#     maximum_material_requirement,
+#     point,
+#     line,
+#     plane,
+#     orientation,
+#     any_cross_section,
+#     any_longitudinal_section,
+#     contacting_feature,
+#     distance_variable,
+#     degree_of_freedom_constraint_x,
+#     degree_of_freedom_constraint_y,
+#     degree_of_freedom_constraint_z,
+#     degree_of_freedom_constraint_u,
+#     degree_of_freedom_constraint_v,
+#     degree_of_freedom_constraint_w,
+#     minor_diameter,
+#     major_diameter,
+#     pitch_diameter);
+# END_TYPE;
+sso:SimpleDatumReferenceModifier
+	a owl:Class , ssmeta:EnumerationClass ;
+	owl:oneOf ( 
+		sso:SimpleDatumReferenceModifier_free_state
+		sso:SimpleDatumReferenceModifier_basic
+		sso:SimpleDatumReferenceModifier_translation
+		sso:SimpleDatumReferenceModifier_least_material_requirement
+		sso:SimpleDatumReferenceModifier_maximum_material_requirement
+		sso:SimpleDatumReferenceModifier_point
+		sso:SimpleDatumReferenceModifier_line
+		sso:SimpleDatumReferenceModifier_plane
+		sso:SimpleDatumReferenceModifier_orientation
+		sso:SimpleDatumReferenceModifier_any_cross_section
+		sso:SimpleDatumReferenceModifier_any_longitudinal_section
+		sso:SimpleDatumReferenceModifier_contacting_feature
+		sso:SimpleDatumReferenceModifier_distance_variable
+		sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_x
+		sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_y
+		sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_z
+		sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_u
+		sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_v
+		sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_w
+		sso:SimpleDatumReferenceModifier_minor_diameter
+		sso:SimpleDatumReferenceModifier_major_diameter
+		sso:SimpleDatumReferenceModifier_pitch_diameter ) .
+sso:SimpleDatumReferenceModifier_free_state
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.free_state" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_basic
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.basic" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_translation
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.translation" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_least_material_requirement
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.least_material_requirement" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_maximum_material_requirement
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.maximum_material_requirement" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_point
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.point" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_line
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.line" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_plane
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.plane" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_orientation
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.orientation" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_any_cross_section
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.any_cross_section" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_any_longitudinal_section
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.any_longitudinal_section" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_contacting_feature
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.contacting_feature" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_distance_variable
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.distance_variable" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_x
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.degree_of_freedom_constraint_x" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_y
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.degree_of_freedom_constraint_y" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_z
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.degree_of_freedom_constraint_z" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_u
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.degree_of_freedom_constraint_u" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_v
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.degree_of_freedom_constraint_v" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_degree_of_freedom_constraint_w
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.degree_of_freedom_constraint_w" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_minor_diameter
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.minor_diameter" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_major_diameter
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.major_diameter" ;
+	a sso:SimpleDatumReferenceModifier .
+sso:SimpleDatumReferenceModifier_pitch_diameter
+	ssmeta:stepImEnumerationMap "simple_datum_reference_modifier.pitch_diameter" ;
+	a sso:SimpleDatumReferenceModifier .
+
+# ENTITY Continuous_shape_element
+#   SUPERTYPE OF (ONEOF(Between_shape_element, All_around_shape_element))
+#   SUBTYPE OF (Composite_shape_element);
+# END_ENTITY;
+sso:ContinuousShapeElement
+	ssmeta:stepImEntityMap "all_around_shape_aspect" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:CompositeShapeElement .
+
+# ENTITY all_around_shape_aspect
+#   SUBTYPE OF (continuous_shape_aspect);
+# END_ENTITY;
+sso:AllAroundShapeElement
+	ssmeta:stepImEntityMap "all_around_shape_aspect" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ContinuousShapeElement .
+
+# ENTITY apex
+#   SUBTYPE OF (derived_shape_aspect);
+# END_ENTITY;
+sso:ApexShapeElement
+	ssmeta:stepImEntityMap "apex" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DerivedShapeElement .
+
+# ENTITY between_shape_aspect
+#   SUBTYPE OF (continuous_shape_aspect);
+#  WHERE
+#   WR1: SIZEOF(query(sar <* SELF\composite_shape_aspect.component_relationships |
+#                sar\shape_aspect_relationship.name = 'start feature')) = 1;
+#   WR2: SIZEOF(query(sar <* SELF\composite_shape_aspect.component_relationships |
+#                sar\shape_aspect_relationship.name = 'end feature')) = 1;
+# END_ENTITY;
+sso:BetweenShapeElement
+	ssmeta:stepImEntityMap "between_shape_aspect" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ContinuosShapeElement .
+
+# ENTITY centre_of_symmetry
+#   SUBTYPE OF (derived_shape_aspect);
+# END_ENTITY;
+sso:CentreOfSymmetry
+	ssmeta:stepImEntityMap "centre_of_symmetry" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DerivedShapeElement .
+
+# ENTITY common_datum
+#   SUBTYPE OF (composite_shape_aspect, datum);
+# WHERE
+#   WR1: SIZEOF (SELF\composite_shape_aspect.component_relationships) = 2;
+#   WR2: SIZEOF (QUERY ( sar <* SELF\composite_shape_aspect.component_relationships| NOT (('SHAPE_ASPECT_DEFINITION_SCHEMA.DATUM' IN TYPEOF (sar.related_shape_aspect)) AND NOT ('SHAPE_ASPECT_DEFINITION_SCHEMA.COMMON_DATUM' IN TYPEOF (sar.related_shape_aspect))) )) = 0;
+# END_ENTITY;
+sso:CommonDatum
+	ssmeta:stepImEntityMap "common_datum" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:CompositeShapeElement, sso:Datum .
+
+# ENTITY composite_group_shape_aspect
+#   SUBTYPE OF (composite_shape_aspect);
+# END_ENTITY;
+sso:CompositeGroupShapeElement
+	ssmeta:stepImEntityMap "composite_group_shape_aspect" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:CompositeShapeElement .
+
+# ENTITY composite_shape_aspect
+#   SUPERTYPE OF (ONEOF (continuous_shape_aspect,
+#                        common_datum,
+#                        composite_group_shape_aspect))
+#   SUBTYPE OF (shape_aspect);
+# INVERSE
+#   component_relationships : SET[2:?] OF shape_aspect_relationship FOR relating_shape_aspect;
+# END_ENTITY;
+sso:CompositeShapeElement
+	ssmeta:stepImEntityMap "composite_shape_aspect" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeElement .
+
+# ENTITY contacting_feature
+#   SUBTYPE OF (shape_aspect);
+# WHERE
+#   WR1: SELF\shape_aspect.product_definitional = FALSE;
+# END_ENTITY;
+sso:ContactingFeature
+	ssmeta:stepImEntityMap "contacting_feature" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeElement .
+
+# ENTITY continuous_shape_aspect
+#   SUPERTYPE OF ( ONEOF (between_shape_aspect, all_around_shape_aspect) )
+#   SUBTYPE OF (composite_shape_aspect);
+# END_ENTITY;
+sso:ContinuosShapeElement
+	ssmeta:stepImEntityMap "continuous_shape_aspect" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:CompositeShapeElement .
+
+# ENTITY datum
+#   SUBTYPE OF (shape_aspect);
+#   identification : identifier;  => sso:datumIdentification
+# INVERSE
+#   established_by_relationships : SET[1:?] OF shape_aspect_relationship FOR related_shape_aspect;
+# UNIQUE
+#   UR1: identification,SELF\shape_aspect.of_shape;
+# WHERE
+#   WR1: ('SHAPE_ASPECT_DEFINITION_SCHEMA.COMMON_DATUM' IN TYPEOF(SELF))
+#    XOR ((SIZEOF(QUERY(x <* SELF\datum.established_by_relationships |
+#           SIZEOF(['SHAPE_ASPECT_DEFINITION_SCHEMA.DATUM_FEATURE',
+#              'SHAPE_ASPECT_DEFINITION_SCHEMA.DATUM_TARGET'] *
+#            TYPEOF(x\shape_aspect_relationship.relating_shape_aspect)) = 1)) >= 1));
+#   WR2: SIZEOF(QUERY(x <* SELF\datum.established_by_relationships |
+#           ('SHAPE_ASPECT_DEFINITION_SCHEMA.DATUM_FEATURE' IN TYPEOF(x\shape_aspect_relationship.relating_shape_aspect)))) <= 1;
+#   WR3: SELF\shape_aspect.product_definitional = FALSE;
+#   WR4: SELF\shape_aspect.name = '';
+# END_ENTITY;
+sso:Datum
+	ssmeta:stepImEntityMap "datum" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeElement ;
+	ssmeta:stepImMapAttributeOrder ( sso:datumIdentification ) .
+
+sso:datumIdentification
+	rdf:type owl:DatatypeProperty ;
+	rdfs:subPropertyOf lci:identificationByLiteral .
+
+# ENTITY datum_feature
+#   SUPERTYPE OF (ONEOF (dimensional_location_with_datum_feature, dimensional_size_with_datum_feature))
+#   SUBTYPE OF (shape_aspect);
+# INVERSE
+#   feature_basis_relationship : SET[1:?] OF shape_aspect_relationship FOR relating_shape_aspect;
+# WHERE
+#   WR1: SIZEOF(QUERY(sar <* SELF\datum_feature.feature_basis_relationship | ('SHAPE_ASPECT_DEFINITION_SCHEMA.DATUM' IN TYPEOF (sar\shape_aspect_relationship.related_shape_aspect)))) = 1;
+#   WR2: SELF\shape_aspect.product_definitional = TRUE;
+# END_ENTITY;
+sso:DatumFeature
+	ssmeta:stepImEntityMap "datum_feature" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeElement .
+
+# ENTITY datum_reference;
+#   precedence : INTEGER;
+#   referenced_datum : datum;
+# WHERE
+#   WR1: precedence > 0;
+# END_ENTITY;
+# => deprectated 
+
+# ENTITY general_datum_reference
+#   ABSTRACT SUPERTYPE OF (ONEOF (datum_reference_compartment,
+#                                 datum_reference_element))
+#   SUBTYPE OF (shape_aspect);
+#   base : datum_or_common_datum;                               => sso:baseDatum
+#   modifiers : OPTIONAL SET[1:?] OF datum_reference_modifier;  => sso:datumModifiers; SET, so several triples as needed
+# WHERE
+#   WR1: SELF\shape_aspect.name = '';
+#   WR2: NOT EXISTS(SELF\shape_aspect.description);
+#   WR3: NOT EXISTS(SELF\shape_aspect.id);
+#   WR4: SELF\shape_aspect.product_definitional = FALSE;
+#   WR5: NOT('SHAPE_ASPECT_DEFINITION_SCHEMA.DATUM' IN TYPEOF(base)) OR (SELF\shape_aspect.of_shape = base\shape_aspect.of_shape);
+#   WR6: NOT('SHAPE_ASPECT_DEFINITION_SCHEMA.COMMON_DATUM_LIST' IN TYPEOF(base)) OR (SELF\shape_aspect.of_shape = base[1]\shape_aspect.of_shape);
+# END_ENTITY;
+sso:GeneralDatumReference
+	ssmeta:stepImEntityMap "general_datum_reference" ;
+	rdf:type owl:Class , ssmeta:AbstractClass ;
+	rdfs:subClassOf sso:ShapeElement ;
+	ssmeta:stepImMapAttributeOrder ( sso:baseDatum sso:datumModifiers ) .
+
+sso:baseDatum
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	ssmeta:stepImEntityMap "general_datum_reference.base" ;
+	rdfs:domain  sso:GeneralDatumReference ;
+	rdfs:range sso:DatumOrCommonDatum .
+
+sso:datumModifiers
+	a owl:ObjectProperty ;
+	ssmeta:stepImEntityMap "general_datum_reference.modifiers" ;
+	rdfs:domain  sso:GeneralDatumReference ;
+	rdfs:range  sso:DatumReferenceModifier . 
+
+# TYPE datum_or_common_datum = SELECT
+#    (common_datum_list,
+#     datum);
+# END_TYPE;
+sso:DatumOrCommonDatum
+	ssmeta:stepImSelectMap "datum_or_common_datum" ;
+	a owl:Class , ssmeta:SelectClass ;
+	owl:unionOf  ( sso:ListOfDatumReferenceElements sso:Datum ) .
+
+# ENTITY datum_reference_compartment
+#   SUBTYPE OF (general_datum_reference);
+# INVERSE
+#   owner : datum_system FOR constituents;
+# END_ENTITY;
+sso:DatumReferenceCompartment
+	ssmeta:stepImEntityMap "GeneralDatumReference" ;
+	rdf:type owl:Class , ssmeta:AbstractClass ;
+	rdfs:subClassOf sso:GeneralDatumReference .
+sso:ListOfDatumReferenceCompartment
+ 	a rdfs:Class ;
+	rdfs:subClassOf rdf:List ;
+	rdfs:label "list of DatumReferenceCompartment" ;
+	ssmeta:ofType sso:DatumReferenceCompartment .
+
+# ENTITY datum_reference_element
+#   SUBTYPE OF (general_datum_reference);
+# DERIVE
+#   owner : general_datum_reference := sts_get_general_datum_reference(SELF);
+# WHERE
+#   WR1: SELF <> owner;
+#   WR2: EXISTS(owner);
+#   WR3: SELF\shape_aspect.of_shape = owner\shape_aspect.of_shape;
+# END_ENTITY;
+sso:DatumReferenceElement
+	ssmeta:stepImEntityMap "datum_reference_element" ;
+	rdf:type owl:Class , ssmeta:AbstractClass ;
+	rdfs:subClassOf sso:GeneralDatumReference .
+
+# TYPE common_datum_list = LIST[2:?] OF datum_reference_element;
+# WHERE
+#   WR1: SIZEOF( QUERY(dre <* SELF | dre\shape_aspect.of_shape <> SELF[1]\shape_aspect.of_shape)) = 0;
+# END_TYPE;
+sso:ListOfDatumReferenceElements
+ 	a rdfs:Class ;
+	rdfs:subClassOf rdf:List ;
+	rdfs:label "list of edges" ;
+	ssmeta:ofType sso:DatumReferenceElement .
+
+# ENTITY datum_reference_modifier_with_value;
+#   modifier_type : datum_reference_modifier_type;
+#   modifier_value : length_measure_with_unit;
+# WHERE
+#   WR1: modifier_value\measure_with_unit.value_component > 0.0;
+# END_ENTITY;
+sso:DatumReferenceModifierWithValue
+	ssmeta:stepImEntityMap "datum_reference_modifier_with_value" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	ssmeta:stepImMapAttributeOrder ( sso:datumModifiedType sso:DatumModifierValue ) .
+
+sso:datumModifiedType
+	ssmeta:stepDmMap "datum_reference_modifier_with_value.modifier_type" ;
+	a owl:ObjectProperty ;
+#	rdfs:subPropertyOf  ;
+	rdfs:domain  sso:DatumReferenceModifierWithValue ;
+	rdfs:range sso:DatumReferenceModifierType .
+
+sso:DatumModifierValue
+	ssmeta:stepDmMap "datum_reference_modifier_with_value.modifier_value" ;
+	a owl:ObjectProperty ;
+#	rdfs:subPropertyOf  ;
+	rdfs:domain  sso:DatumReferenceModifierWithValue ;
+	rdfs:range qau:Length .
+
+# ENTITY datum_system
+#   SUBTYPE OF (shape_aspect);
+#   constituents : LIST[1:3] OF UNIQUE datum_reference_compartment;
+# UNIQUE
+#   UR1: SELF\shape_aspect.of_shape,SELF\shape_aspect.name;
+# WHERE
+#   WR1: SELF\shape_aspect.product_definitional = FALSE;
+# END_ENTITY;
+sso:DatumSystem
+	ssmeta:stepImEntityMap "datum_system" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeElement ;
+	ssmeta:stepImMapAttributeOrder ( sso:datumSystemConstituents ) .
+sso:ListOfDatumSystem   # only one used!
+ 	a rdfs:Class ;
+	rdfs:subClassOf rdf:List ;
+	rdfs:label "list of datum_system" ;
+	ssmeta:ofType sso:DatumSystem .
+
+sso:datumSystemConstituents
+	ssmeta:stepDmMap "datum_system.constituents" ;
+	a owl:ObjectProperty ;
+	rdfs:subPropertyOf rep:itemIdentifiedRepresentationUsage ;
+	rdfs:domain sso:DatumSystem ;
+	rdfs:range sso:ListOfDatumReferenceCompartment .
+
+# ENTITY datum_target
+#   SUBTYPE OF (shape_aspect);
+#   target_id : identifier;
+# INVERSE
+#   target_basis_relationship : SET[1:?] OF shape_aspect_relationship FOR relating_shape_aspect;
+# WHERE
+#   WR1: SIZEOF(QUERY(sar <* SELF\datum_target.target_basis_relationship | ('SHAPE_ASPECT_DEFINITION_SCHEMA.DATUM' IN TYPEOF (sar\shape_aspect_relationship.related_shape_aspect)))) = 1;
+#   WR2: SELF\shape_aspect.product_definitional = TRUE;
+# END_ENTITY;
+sso:DatumTarget
+	ssmeta:stepImEntityMap "datum_target" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeElement ;
+	ssmeta:stepImMapAttributeOrder ( sso:datumTargetId ) .
+
+sso:datumTargetId
+	rdf:type owl:DatatypeProperty ;
+	rdfs:subPropertyOf lci:identificationByLiteral .
+
+# ENTITY derived_shape_aspect
+#   SUPERTYPE OF (ONEOF (apex,
+#                        centre_of_symmetry,
+#                        geometric_alignment,
+#                        geometric_contact,
+#                        geometric_intersection,
+#                        parallel_offset,
+#                        perpendicular_to,
+#                        extension,
+#                        tangent))
+#   SUBTYPE OF (shape_aspect);
+# INVERSE
+#   deriving_relationships : SET[1:?] OF shape_aspect_deriving_relationship FOR relating_shape_aspect;
+# END_ENTITY;
+sso:DerivedShapeElement
+	ssmeta:stepImEntityMap "derived_shape_aspect" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeElement .
+
+# ENTITY dimensional_location_with_datum_feature
+#   SUBTYPE OF (datum_feature, dimensional_location);
+# END_ENTITY;
+# sso:DimensionalLocationWithDatumFeature
+#	ssmeta:stepImEntityMap "dimensional_location_with_datum_feature" ;
+#	rdf:type owl:Class , ssmeta:MainClass ;
+#	rdfs:subClassOf sso:DatumFeature, sso:DimensionalLocation .
+
+# ENTITY dimensional_size_with_datum_feature
+#   SUBTYPE OF (datum_feature, dimensional_size);
+#   WHERE
+#    WR1: SELF\dimensional_size.applies_to :=: SELF;
+# END_ENTITY;
+sso:DimensionalSizeWithDatumFeature
+	ssmeta:stepImEntityMap "dimensional_size_with_datum_feature" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DatumFeature, sso:DimensionalSize .
+
+# ENTITY extension
+#   SUBTYPE OF (derived_shape_aspect);
+# WHERE
+#   WR1: SIZEOF (SELF\derived_shape_aspect.deriving_relationships)= 1;
+# END_ENTITY;
+sso:ExtensionShapeElement
+	ssmeta:stepImEntityMap "extension" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DerivedShapeElement .
+
+# ENTITY feature_definition
+#   SUBTYPE OF (characterized_object);
+##     ENTITY characterized_object;
+##		name : label;
+##		description : OPTIONAL text;
+##	  END_ENTITY; 
+# END_ENTITY;
+# TBD, see sso:ShapeFeatureDefinition
+
+# ENTITY geometric_alignment
+#   SUBTYPE OF (derived_shape_aspect);
+# WHERE
+#   WR1: SIZEOF (SELF\derived_shape_aspect.deriving_relationships)> 1;
+# END_ENTITY;
+sso:GeometricAlignment
+	ssmeta:stepImEntityMap "geometric_alignment" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DerivedShapeElement .
+
+# ENTITY geometric_contact
+#   SUBTYPE OF (derived_shape_aspect);
+# WHERE
+#   WR1: SIZEOF (SELF\derived_shape_aspect.deriving_relationships)= 2;
+# END_ENTITY;
+sso:GeometricContactShapeElement
+	ssmeta:stepImEntityMap "geometric_contact" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DerivedShapeElement .
+
+# ENTITY geometric_intersection
+#   SUBTYPE OF (derived_shape_aspect);
+# WHERE
+#   WR1: SIZEOF (SELF\derived_shape_aspect.deriving_relationships)> 1;
+# END_ENTITY;
+sso:GeometricIntersectionShapeElement
+	ssmeta:stepImEntityMap "geometric_intersection" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DerivedShapeElement .
+
+# ENTITY instanced_feature
+#   SUBTYPE OF (feature_definition, shape_aspect);
+# WHERE
+#   WR1: 'PRODUCT_DEFINITION_SCHEMA.PRODUCT_DEFINITION' IN TYPEOF (SELF.of_shape.definition);
+#   WR2: SELF.product_definitional;
+# END_ENTITY;
+# To be converted into a ShapeElement with lci:isdefinedBy
+sso:InstancedFeature
+	ssmeta:stepImEntityMap "instanced_feature" ;
+	rdf:type owl:Class , ssmeta:DummyStepIrClass ;
+	rdfs:subClassOf sso:ShapeElement .
+
+# ENTITY parallel_offset
+#   SUBTYPE OF (derived_shape_aspect);
+#   offset : measure_with_unit;
+# WHERE
+#   WR1: SIZEOF (SELF\derived_shape_aspect.deriving_relationships)= 1;
+# END_ENTITY;
+sso:ParallelOffsetShapeElement
+	ssmeta:stepImEntityMap "parallel_offset" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DerivedShapeElement .
+
+# ENTITY perpendicular_to
+#   SUBTYPE OF (derived_shape_aspect);
+# WHERE
+#   WR1: SIZEOF (SELF\derived_shape_aspect.deriving_relationships)= 1;
+# END_ENTITY;
+sso:PerpendicularToShapeElement
+	ssmeta:stepImEntityMap "perpendicular_to" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DerivedShapeElement .
+
+# ENTITY referenced_modified_datum
+#   SUBTYPE OF (datum_reference);
+#   modifier : limit_condition;
+# END_ENTITY;
+# => deprecated
+ 
+# ENTITY shape_aspect_deriving_relationship
+#   SUBTYPE OF (shape_aspect_relationship);
+#   SELF\shape_aspect_relationship.relating_shape_aspect : derived_shape_aspect;
+# END_ENTITY;
+sso:shapeAspectDerivingRelationship
+	ssmeta:stepImEntityMap "shape_aspect_deriving_relationship" ;
+#	ssmeta:stepDmMap "" ;
+	a owl:ObjectProperty ;
+#	rdfs:subPropertyOf : ;
+	ssmeta:stepImMapAttributeOrder ( rdfs:domain rdfs:range ) .
+
+# ENTITY symmetric_shape_aspect
+#   SUBTYPE OF (shape_aspect);
+# INVERSE
+#   basis_relationships : SET[1:?] OF shape_aspect_deriving_relationship FOR related_shape_aspect;
+# END_ENTITY;
+sso:SymmetricShapeElement
+	ssmeta:stepImEntityMap "symmetric_shape_aspect" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeElement .
+
+# ENTITY tangent
+#   SUBTYPE OF (derived_shape_aspect);
+# WHERE
+#   WR1: SIZEOF (SELF\derived_shape_aspect.deriving_relationships)= 1;
+# END_ENTITY;
+sso:TangentShapeElement
+	ssmeta:stepImEntityMap "DerivedShapeElement" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DerivedShapeElement .
+
+# SUBTYPE_CONSTRAINT sads_shape_aspect_subtypes FOR shape_aspect;
+#   ONEOF (contacting_feature,
+#          datum,
+#          datum_feature,
+#          datum_target,
+#          datum_system,
+#          general_datum_reference);
+# END_SUBTYPE_CONSTRAINT;
+
+# SCHEMA shape_dimension_schema -----------------------------------------------------------------------------------------------
+
+#   TYPE sd_id_attribute_select = SELECT BASED_ON id_attribute_select WITH (
+#     dimensional_size);
+#   END_TYPE;
+
+# TYPE angle_relator = ENUMERATION OF 
+#    (equal,
+#     large,
+#     small);
+# END_TYPE; 
+sso:AngleRelator
+	a owl:Class , ssmeta:EnumerationClass ;
+	owl:oneOf (  ) .
+sso:AngleRelator_equal
+	ssmeta:stepImEnumerationMap "angle_relator.equal" ;
+	a sso:AngleRelator .
+sso:AngleRelator_large
+	ssmeta:stepImEnumerationMap "angle_relator.large" ;
+	a sso:AngleRelator .
+sso:AngleRelator_small
+	ssmeta:stepImEnumerationMap "angle_relator.small" ;
+	a sso:AngleRelator .
+
+# ENTITY dimensional_characteristic_representation;
+#   dimension : dimensional_characteristic;
+#   representation : shape_dimension_representation;
+# END_ENTITY;
+sso:dimensionalCharacteristicRepresentation
+	ssmeta:stepImEntityMap "dimensional_characteristic_representation" ;
+	a owl:ObjectProperty ;
+	rdfs:domain sso:DimensionalCharacteristic ;
+	rdfs:range rep:ShapeDimensionRepresentation ;
+	ssmeta:stepImMapAttributeOrder ( rdfs:domain rdfs:range ) .
+
+# TYPE dimensional_characteristic = SELECT
+#    (dimensional_location, 
+#     dimensional_size);
+# END_TYPE; 
+sso:DimensionalCharacteristic
+	a owl:Class , ssmeta:SelectClass ;
+	ssmeta:stepImSelectMap "dimensional_characteristic" ;
+	owl:unionOf ( sso:DimensionalLocation sso:DimensionalSize ) .
+
+# ENTITY dimensional_location
+#   SUPERTYPE OF (ONEOF (angular_location,
+#                        dimensional_location_with_path))
+#   SUBTYPE OF (shape_aspect_relationship);  # NO, don't treat it this way for SST
+# ---
+##  name : label;
+##  description : OPTIONAL text;
+##  relating_shape_aspect : shape_aspect;
+##  related_shape_aspect : shape_aspect;
+# ---
+# WHERE
+#   WR1: SELF\shape_aspect_relationship.relating_shape_aspect :<>: SELF\shape_aspect_relationship.related_shape_aspect;
+#   WR2: SELF\shape_aspect_relationship.relating_shape_aspect.of_shape :=: SELF\shape_aspect_relationship.related_shape_aspect.of_shape;
+# END_ENTITY;
+sso:DimensionalLocation
+	ssmeta:stepImEntityMap "dimensional_location" ;
+	a owl:Class , ssmeta:MainClass ;
+#	rdfs:subClassOf sso:ShapeAspectRelationship ;  # NO, don't treat it this way for SST
+	ssmeta:stepImMapAttributeOrder ( rdfs:label rdfs:comment ) .
+
+# ENTITY dimensional_location_with_path
+#   SUBTYPE OF (dimensional_location);
+#   path : shape_aspect;
+# END_ENTITY;
+sso:DimensionalLocationWithPath
+	ssmeta:stepImEntityMap "dimensional_location" ;
+	a owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DimensionalLocation ;
+	ssmeta:stepImMapAttributeOrder ( sso:shapeElementLocationPath ) .
+
+sso:shapeElementLocationPath
+	a owl:ObjectProperty ;
+	ssmeta:stepImEntityMap "dimensional_location_with_path.path" ;
+	rdfs:domain sso:DimensionalLocationWithPath ;
+	rdfs:range sso:ShapeElement .
+
+# ENTITY angular_location
+#   SUBTYPE OF (dimensional_location);
+#   angle_selection : angle_relator;
+# END_ENTITY;
+sso:AngularLocation
+	ssmeta:stepImEntityMap "angular_location" ;
+	a owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DimensionalLocation ;
+	ssmeta:stepImMapAttributeOrder ( sso:angleSelection ) .
+
+sso:angleSelection
+	a owl:ObjectProperty ;
+	ssmeta:stepImEntityMap "angular_location.angle_selection" ;
+	rdfs:domain sso:AngularLocation ;
+	rdfs:range sso:AngleRelator .
+
+# ENTITY directed_dimensional_location
+#   SUBTYPE OF (dimensional_location);
+# END_ENTITY;
+sso:DirectedDimensionalLocation
+	ssmeta:stepImEntityMap "directed_dimensional_location" ;
+	a owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DimensionalLocation ;
+	ssmeta:stepImMapAttributeOrder ( ) .
+
+# TYPE dimensional_location_with_normal_constraint_type = ENUMERATION OF
+#    (uniform_thickness_cone_cone,
+#     uniform_thickness_cylinder_cylinder,
+#     uniform_thickness_face_surface_face_surface,
+#     uniform_thickness_plane_plane,
+#     uniform_thickness_revolute_revolute,
+#     uniform_thickness_sphere_sphere,
+#     uniform_thickness_surface_surface,
+#     uniform_thickness_torus_torus);
+# END_TYPE;
+sso:DimensionalLocationWithNormalConstraintType
+	a owl:Class , ssmeta:EnumerationClass ;
+	owl:oneOf (  
+		sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_cone_cone
+		sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_cylinder_cylinder
+		sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_face_surface_face_surface
+		sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_plane_plane
+		sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_revolute_revolute
+		sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_sphere_sphere
+		sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_surface_surface
+		sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_torus_torus
+	) .
+sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_cone_cone
+	a sso:DimensionalLocationWithNormalConstraintType ;
+	ssmeta:stepImEnumerationMap "uniform_thickness_cone_cone" .
+sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_cylinder_cylinder
+	a sso:DimensionalLocationWithNormalConstraintType ;
+	ssmeta:stepImEnumerationMap"uniform_thickness_cylinder_cylinder" .
+sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_face_surface_face_surface
+	a sso:DimensionalLocationWithNormalConstraintType ;
+	ssmeta:stepImEnumerationMap "uniform_thickness_face_surface_face_surface" .
+sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_plane_plane
+	a sso:DimensionalLocationWithNormalConstraintType ;
+	ssmeta:stepImEnumerationMap "uniform_thickness_plane_plane" .
+sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_revolute_revolute
+	a sso:DimensionalLocationWithNormalConstraintType ;
+	ssmeta:stepImEnumerationMap "uniform_thickness_revolute_revolute" .
+sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_sphere_sphere
+	a sso:DimensionalLocationWithNormalConstraintType ;
+	ssmeta:stepImEnumerationMap "uniform_thickness_sphere_sphere" .
+sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_surface_surface
+	a sso:DimensionalLocationWithNormalConstraintType ;
+	ssmeta:stepImEnumerationMap "uniform_thickness_surface_surface" .
+sso:DimensionalLocationWithNormalConstraintType_uniform_thickness_torus_torus
+	a sso:DimensionalLocationWithNormalConstraintType ;
+	ssmeta:stepImEnumerationMap "uniform_thickness_torus_torus" .
+
+# ENTITY dimensional_location_with_normal_constraint
+#   SUBTYPE OF (directed_dimensional_location);
+#   classification : dimensional_location_with_normal_constraint_type;
+#   SELF\shape_aspect_relationship.relating_shape_aspect RENAMED surface1 : surface_or_face_surface_shape_aspect;
+#   SELF\shape_aspect_relationship.related_shape_aspect RENAMED surface2 : surface_or_face_surface_shape_aspect;
+# INVERSE
+#   associated_geometric_tolerance : SET[0:0] OF geometric_tolerance FOR toleranced_shape_aspect;
+# WHERE
+#   WR1: TYPEOF(surface1) = TYPEOF(surface2);
+#   WR2: surface1 :<>: surface2;
+# END_ENTITY;
+sso:DimensionalLocationWithNormalConstraint
+	ssmeta:stepImEntityMap "dimensional_location_with_normal_constraint" ;
+	a owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DirectedDimensionalLocation ;
+	ssmeta:stepImMapAttributeOrder (  ) .
+
+
+# ENTITY dimensional_size
+#   SUPERTYPE OF (ONEOF (angular_size,
+#                        dimensional_size_with_path));
+#   applies_to : shape_aspect;
+#   name : label;
+#  DERIVE
+#   id : identifier := get_id_value(SELF);
+# UNIQUE
+#   UR1: id, applies_to;    
+# WHERE
+#   WR1: applies_to.product_definitional = TRUE;
+#   WR2: SIZEOF(USEDIN(SELF, 'BASIC_ATTRIBUTE_SCHEMA.' + 'ID_ATTRIBUTE.IDENTIFIED_ITEM')) <= 1;
+# END_ENTITY;
+sso:DimensionalSize
+	ssmeta:stepImEntityMap "dimensional_size" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:Aspect ;
+	ssmeta:stepImMapAttributeOrder ( lci:partOf rdfs:label ) .
+
+# ENTITY dimensional_size_with_path
+#   SUBTYPE OF (dimensional_size);
+#   path : shape_aspect;
+# END_ENTITY;
+sso:DimensionalSizeWithPath
+	ssmeta:stepImEntityMap "dimensional_location" ;
+	a owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:DimensionalSize ;
+	ssmeta:stepImMapAttributeOrder ( sso:shapeElementSizePath ) .
+
+sso:shapeElementSizePath
+	a owl:ObjectProperty ;
+	ssmeta:stepImEntityMap "dimensional_size_with_path.path" ;
+	rdfs:domain sso:DimensionalSizeWithPath ;
+	rdfs:range sso:ShapeElement .
+
+# ENTITY angular_size
+#   SUBTYPE OF (dimensional_size);
+#   angle_selection : angle_relator;
+# END_ENTITY;
+
+# SCHEMA shape_tolerance_schema IR47 -----------------------------------------------------------------------------------
+
+# TYPE st_id_attribute_select = SELECT BASED_ON id_attribute_select WITH (
+#     geometric_tolerance);
+# END_TYPE;
+
+# TYPE area_unit_type = EXTENSIBLE ENUMERATION OF
+#    (circular,
+#     square,
+#     rectangular,
+#     cylindrical,
+#     spherical );
+# END_TYPE;
+sso:AreaUnitType
+	a owl:Class , ssmeta:EnumerationClass ;
+	owl:oneOf ( 
+		sso:AreaUnitType_circular
+		sso:AreaUnitType_square
+		sso:AreaUnitType_rectangular
+		sso:AreaUnitType_cylindrical
+		sso:AreaUnitType_spherical ) .
+sso:AreaUnitType_circular
+	a sso:AreaUnitType ;
+	ssmeta:stepImEnumerationMap "area_unit_type.circular" .
+sso:AreaUnitType_square
+	a sso:AreaUnitType ;
+	ssmeta:stepImEnumerationMap "area_unit_type.square" .
+sso:AreaUnitType_rectangular
+	a sso:AreaUnitType ;
+	ssmeta:stepImEnumerationMap "area_unit_type.rectangular" .
+sso:AreaUnitType_cylindrical
+	a sso:AreaUnitType ;
+	ssmeta:stepImEnumerationMap "area_unit_type.cylindrical" .
+sso:AreaUnitType_spherical
+	a sso:AreaUnitType ;
+	ssmeta:stepImEnumerationMap "area_unit_type.spherical" .
+
+# TYPE directed_tolerance_zone_type = ENUMERATION OF
+#   (perpendicular, parallel, including);
+# END_TYPE;
+sso:DirectedToleranceZoneType
+	a owl:Class , ssmeta:EnumerationClass ;
+	owl:oneOf ( 
+		sso:DirectedToleranceZoneType_perpendicular
+		sso:DirectedToleranceZoneType_parallel
+		sso:DirectedToleranceZoneType_including ) .
+sso:DirectedToleranceZoneType_perpendicular
+	a sso:DirectedToleranceZoneType ;
+	ssmeta:stepImEnumerationMap "directed_tolerance_zone_type.perpendicular" .
+sso:DirectedToleranceZoneType_parallel
+	a sso:DirectedToleranceZoneType ;
+	ssmeta:stepImEnumerationMap "directed_tolerance_zone_type.parallel" .
+sso:DirectedToleranceZoneType_including
+	a sso:DirectedToleranceZoneType ;
+	ssmeta:stepImEnumerationMap "directed_tolerance_zone_type.including" .
+
+# TYPE geometric_tolerance_auxiliary_classification_enum = ENUMERATION OF
+#  	 (all_over,
+#     unless_otherwise_specified);
+#  END_TYPE;
+sso:GeometricToleranceAuxiliaryClassificationEnum
+	a owl:Class , ssmeta:EnumerationClass ;
+	owl:oneOf ( 
+		sso:GeometricToleranceAuxiliaryClassificationEnum_all_over
+		sso:GeometricToleranceAuxiliaryClassificationEnum_unless_otherwise_specified ) .
+sso:GeometricToleranceAuxiliaryClassificationEnum_all_over
+	a sso:GeometricToleranceAuxiliaryClassificationEnum ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_auxiliary_classification_enum.all_over" .
+sso:GeometricToleranceAuxiliaryClassificationEnum_unless_otherwise_specified
+	a sso:GeometricToleranceAuxiliaryClassificationEnum ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_auxiliary_classification_enum.unless_otherwise_specified" .
+
+# TYPE geometric_tolerance_modifier = EXTENSIBLE ENUMERATION OF
+#    (circle_a,
+#     maximum_material_requirement,
+#     least_material_requirement,
+#     reciprocity_requirement,
+#     any_cross_section,
+#     free_state,
+#     common_zone,
+#     minor_diameter,
+#     major_diameter,
+#     pitch_diameter,
+#     line_element,
+#     not_convex,
+#     statistical_tolerance,
+#     tangent_plane,
+#     each_radial_element,
+#     separate_requirement,
+#     united_feature,
+#     associated_minmax_feature,
+#     associated_least_square_feature,
+#     associated_minimum_inscribed_feature,
+#     associated_tangent_feature,
+#     associated_maximum_inscribed_feature,
+#     reference_minimax_feature_without_constraint,
+#     reference_minimax_feature_with_external_material_constraint,
+#     reference_minimax_feature_with_internal_material_constraint,
+#     reference_least_square_feature_without_constraint,
+#     reference_least_square_feature_with_external_material_constraint,
+#     reference_least_square_feature_with_internal_material_constraint,
+#     reference_minimum_circumscribed_feature,
+#     reference_maximum_inscribed_feature,
+#     total_range_deviations,
+#     peak_height,
+#     valley_depth,
+#     standard_deviation
+#     );
+# END_TYPE;
+sso:GeometricToleranceModifier
+	a owl:Class , ssmeta:EnumerationClass ;
+	owl:oneOf ( 
+		sso:GeometricToleranceModifier_circle_a
+		sso:GeometricToleranceModifier_maximum_material_requirement
+		sso:GeometricToleranceModifier_least_material_requirement
+		sso:GeometricToleranceModifier_reciprocity_requirement
+		sso:GeometricToleranceModifier_any_cross_section
+		sso:GeometricToleranceModifier_free_state
+		sso:GeometricToleranceModifier_common_zone
+		sso:GeometricToleranceModifier_minor_diameter
+		sso:GeometricToleranceModifier_major_diameter
+		sso:GeometricToleranceModifier_pitch_diameter
+		sso:GeometricToleranceModifier_line_element
+		sso:GeometricToleranceModifier_not_convex
+		sso:GeometricToleranceModifier_statistical_tolerance
+		sso:GeometricToleranceModifier_tangent_plane
+		sso:GeometricToleranceModifier_each_radial_element
+		sso:GeometricToleranceModifier_separate_requirement
+		sso:GeometricToleranceModifier_united_feature
+		sso:GeometricToleranceModifier_associated_minmax_feature
+		sso:GeometricToleranceModifier_associated_least_square_feature
+		sso:GeometricToleranceModifier_associated_minimum_inscribed_feature
+		sso:GeometricToleranceModifier_associated_tangent_feature
+		sso:GeometricToleranceModifier_associated_maximum_inscribed_feature
+		sso:GeometricToleranceModifier_reference_minimax_feature_without_constraint
+		sso:GeometricToleranceModifier_reference_minimax_feature_with_external_material_constraint
+		sso:GeometricToleranceModifier_reference_minimax_feature_with_internal_material_constraint
+		sso:GeometricToleranceModifier_reference_least_square_feature_without_constraint
+		sso:GeometricToleranceModifier_reference_least_square_feature_with_external_material_constraint
+		sso:GeometricToleranceModifier_reference_least_square_feature_with_internal_material_constraint
+		sso:GeometricToleranceModifier_reference_minimum_circumscribed_feature
+		sso:GeometricToleranceModifier_total_range_deviations
+		sso:GeometricToleranceModifier_peak_height
+		sso:GeometricToleranceModifier_valley_depth
+		sso:GeometricToleranceModifier_standard_deviation ) .
+sso:GeometricToleranceModifier_circle_a
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.circle_a" .
+sso:GeometricToleranceModifier_maximum_material_requirement
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.maximum_material_requirement" .
+sso:GeometricToleranceModifier_least_material_requirement
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.least_material_requirement" .
+sso:GeometricToleranceModifier_reciprocity_requirement
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.reciprocity_requirement" .
+sso:GeometricToleranceModifier_any_cross_section
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.any_cross_section" .
+sso:GeometricToleranceModifier_free_state
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.free_state" .
+sso:GeometricToleranceModifier_common_zone
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.common_zone" .
+sso:GeometricToleranceModifier_minor_diameter
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.minor_diameter" .
+sso:GeometricToleranceModifier_major_diameter
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.major_diameter" .
+sso:GeometricToleranceModifier_pitch_diameter
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.pitch_diameter" .
+sso:GeometricToleranceModifier_line_element
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.line_element" .
+sso:GeometricToleranceModifier_not_convex
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.not_convex" .
+sso:GeometricToleranceModifier_statistical_tolerance
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.statistical_tolerance" .
+sso:GeometricToleranceModifier_tangent_plane
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.tangent_plane" .
+sso:GeometricToleranceModifier_each_radial_element
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.each_radial_element" .
+sso:GeometricToleranceModifier_separate_requirement
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.separate_requirement" .
+sso:GeometricToleranceModifier_united_feature
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.united_feature" .
+sso:GeometricToleranceModifier_associated_minmax_feature
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.associated_minmax_feature" .
+sso:GeometricToleranceModifier_associated_least_square_feature
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.associated_least_square_feature" .
+sso:GeometricToleranceModifier_associated_minimum_inscribed_feature
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.associated_minimum_inscribed_feature" .
+sso:GeometricToleranceModifier_associated_tangent_feature
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.associated_tangent_feature" .
+sso:GeometricToleranceModifier_associated_maximum_inscribed_feature
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.associated_maximum_inscribed_feature" .
+sso:GeometricToleranceModifier_reference_minimax_feature_without_constraint
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.reference_minimax_feature_without_constraint" .
+sso:GeometricToleranceModifier_reference_minimax_feature_with_external_material_constraint
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.reference_minimax_feature_with_external_material_constraint" .
+sso:GeometricToleranceModifier_reference_minimax_feature_with_internal_material_constraint
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.reference_minimax_feature_with_internal_material_constraint" .
+sso:GeometricToleranceModifier_reference_least_square_feature_without_constraint
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.reference_least_square_feature_without_constraint" .
+sso:GeometricToleranceModifier_reference_least_square_feature_with_external_material_constraint
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.reference_least_square_feature_with_external_material_constraint" .
+sso:GeometricToleranceModifier_reference_least_square_feature_with_internal_material_constraint
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.reference_least_square_feature_with_internal_material_constraint" .
+sso:GeometricToleranceModifier_reference_minimum_circumscribed_feature
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.reference_minimum_circumscribed_feature" .
+sso:GeometricToleranceModifier_total_range_deviations
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.total_range_deviations" .
+sso:GeometricToleranceModifier_peak_height
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.peak_height" .
+sso:GeometricToleranceModifier_valley_depth
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.valley_depth" .
+sso:GeometricToleranceModifier_standard_deviation
+	a sso:GeometricToleranceModifier ;
+	ssmeta:stepImEnumerationMap "geometric_tolerance_modifier.standard_deviation" .
+
+# TYPE geometric_tolerance_target = SELECT
+#    (dimensional_location,
+#     dimensional_size,
+#     product_definition_shape,
+#     shape_aspect);
+# END_TYPE;
+sso:GeometricToleranceTarget
+	ssmeta:stepImSelectMap "datum_reference_modifier" ;
+	a owl:Class , ssmeta:SelectClass ;
+	owl:unionOf ( 
+		sso:DimensionalLocation 
+		sso:DimensionalSize 
+		sso:PartDesign
+		sso:ShapeElement ) .
+
+# TYPE length_or_plane_angle_measure_with_unit_select = SELECT (
+#   length_measure_with_unit,
+#   plane_angle_measure_with_unit);
+# END_TYPE;
+sso:LengthOrAngle
+	ssmeta:stepImSelectMap "length_or_plane_angle_measure_with_unit_select" ;
+	a owl:Class , ssmeta:SelectClass ;
+	owl:unionOf ( 
+		qau:Length
+		qau:Angle ) . 
+
+# TYPE oriented_tolerance_zone_type = ENUMERATION OF
+#   (perpendicular, parallel, angular);
+# END_TYPE;
+sso:OrientedToleranceZoneType
+	a owl:Class , ssmeta:EnumerationClass ;
+	owl:oneOf ( 
+		sso:OrientedToleranceZoneType_perpendicular
+		sso:OrientedToleranceZoneType_parallel
+		sso:OrientedToleranceZoneType_angular ) .
+sso:OrientedToleranceZoneType_perpendicular
+	a sso:OrientedToleranceZoneType ;
+	ssmeta:stepImEnumerationMap "OrientedToleranceZoneType.perpendicular" .
+sso:OrientedToleranceZoneType_parallel
+	a sso:OrientedToleranceZoneType ;
+	ssmeta:stepImEnumerationMap "OrientedToleranceZoneType.parallel" .
+sso:OrientedToleranceZoneType_angular
+	a sso:OrientedToleranceZoneType ;
+	ssmeta:stepImEnumerationMap "OrientedToleranceZoneType.angular" .
+
+# TYPE shape_tolerance_select = SELECT
+#    (geometric_tolerance,
+#     plus_minus_tolerance);
+# END_TYPE;
+sso:ShapeToleranceSelect
+	ssmeta:stepImSelectMap "shape_tolerance_select" ;
+	a owl:Class , ssmeta:SelectClass ;
+	owl:unionOf ( 
+		sso:GeometricTolerance
+		sso:PlusMinusTolerance ) . 
+
+# TYPE sts_item_identified_representation_usage_definition = EXTENSIBLE GENERIC_ENTITY SELECT BASED_ON item_identified_representation_usage_definition WITH
+#    (geometric_tolerance);
+# END_TYPE;
+
+# TYPE tolerance_method_definition = SELECT
+#    (limits_and_fits,
+#     tolerance_value);
+# END_TYPE;
+sso:ToleranceMethodDefinition
+	ssmeta:stepImSelectMap "tolerance_method_definition" ;
+	a owl:Class , ssmeta:SelectClass ;
+	owl:unionOf ( 
+		sso:LimitsAndFits
+		sso:ToleranceValue ) . 
+
+# TYPE tolerance_zone_target = SELECT (
+#   dimensional_location,
+#   dimensional_size,
+#   geometric_tolerance,
+#   general_datum_reference);
+# END_TYPE;
+sso:ToleranceZoneTarget
+	ssmeta:stepImSelectMap "tolerance_zone_target" ;
+	a owl:Class , ssmeta:SelectClass ;
+	owl:unionOf ( 
+		sso:DimensionalLocation 
+		sso:DimensionalSize 
+		sso:GeometricTolerance
+		sso:GeneralDatumReference ) .
+
+# ENTITY dimension_related_tolerance_zone_element;
+#   related_dimension : dimensional_location;
+#   related_element : tolerance_zone_definition;
+# END_ENTITY;
+# => deprecated
+
+# ENTITY directed_tolerance_zone
+#   SUBTYPE OF (tolerance_zone_with_datum);
+#   direction : directed_tolerance_zone_type; => sso:directedToleranceZoneDirection
+# END_ENTITY;
+sso:DirectedToleranceZoneShapeElement
+	ssmeta:stepImEntityMap "directed_tolerance_zone" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ToleranceZoneWithDatumSystem .
+
+sso:directedToleranceZoneDirection
+	ssmeta:stepImAttributeMap "directed_tolerance_zone.direction" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:DirectedToleranceZoneShapeElement ;
+	rdfs:range sso:DirectedToleranceZoneType .
+
+# ENTITY geometric_tolerance
+#   ABSTRACT SUPERTYPE OF (geometric_tolerance_with_datum_reference
+#                          ANDOR geometric_tolerance_with_defined_unit
+#                         ANDOR ONEOF (geometric_tolerance_with_modifiers,
+#                              modified_geometric_tolerance)
+#                       ANDOR unequally_disposed_geometric_tolerance
+#                      ANDOR ONEOF (cylindricity_tolerance,
+#                           flatness_tolerance,
+#                           line_profile_tolerance,
+#                           position_tolerance,
+#                           roundness_tolerance,
+#                           straightness_tolerance,
+#                           surface_profile_tolerance));
+#   name : label;                                          => rdfs:label
+#   description : OPTIONAL text;                           => rdfs:comment
+#   magnitude : OPTIONAL length_measure_with_unit;         => sso:geometricToleranceMagnitude
+#   toleranced_shape_aspect : geometric_tolerance_target;  => sso:tolerancedShapeAspect
+# DERIVE
+#   controlling_shape : product_definition_shape := sts_get_product_definition_shape(toleranced_shape_aspect);
+#     id : identifier := get_id_value(SELF);
+# INVERSE
+# 	auxiliary_classification : SET [0:?] OF geometric_tolerance_auxiliary_classification FOR described_item;
+# 	tolerance_relationship   : SET [0:?] OF geometric_tolerance_relationship for relating_geometric_tolerance;
+# UNIQUE
+#   UR1: id, controlling_shape;
+# WHERE
+#   WR1: magnitude\measure_with_unit.value_component >= 0.0;
+#   WR2: EXISTS(controlling_shape);
+#   WR3: NOT ('PRODUCT_PROPERTY_DEFINITION_SCHEMA.SHAPE_ASPECT_RELATIONSHIP' IN TYPEOF(toleranced_shape_aspect))
+#        OR (toleranced_shape_aspect\shape_aspect_relationship.relating_shape_aspect.of_shape :=:
+#             toleranced_shape_aspect\shape_aspect_relationship.related_shape_aspect.of_shape);
+#   WR4: SIZEOF(USEDIN(SELF, 'BASIC_ATTRIBUTE_SCHEMA.' + 'ID_ATTRIBUTE.IDENTIFIED_ITEM')) <= 1;
+#   WR5: SIZEOF(QUERY( tr <* tolerance_relationship | tr.name = 'composite tolerance')) <= 1;
+# --description a) A Geometric_tolerance shall be used at most once by geometric_tolerance_relationship.related with the name "composite tolerance"
+# END_ENTITY;
+sso:GeometricTolerance
+	ssmeta:stepImEntityMap "geometric_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:Aspect ;
+	ssmeta:stepImMapAttributeOrder ( rdfs:label rdfs:comment sso:geometricToleranceMagnitude sso:tolerancedShapeAspect ) .
+
+sso:geometricToleranceMagnitude
+	ssmeta:stepImAttributeMap "geometric_tolerance.magnitude" ;
+	a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:subPropertyOf lci:partOf ;
+	rdfs:domain  rep:Representation ;
+	rdfs:range xsd:double .
+
+sso:tolerancedShapeAspect
+	ssmeta:stepImAttributeMap "geometric_tolerance.toleranced_shape_aspect" ;
+	a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:subPropertyOf lci:partOf ;
+	rdfs:domain  rep:Representation ;
+	rdfs:range sso:GeometricToleranceTarget .
+
+# ENTITY geometric_tolerance_auxiliary_classification;
+#  attribute_value : geometric_tolerance_auxiliary_classification_enum; => rdfs:domain
+#  described_item : geometric_tolerance;   => rdfs:range
+#  END_ENTITY;
+sso:geometricToleranceAuxiliaryClassification
+	ssmeta:stepImEntityMap "geometric_tolerance_auxiliary_classification" ;
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImMapAttributeOrder ( rdfs:domain rdfs:range ) .
+
+# ENTITY geometric_tolerance_relationship;
+#   name : label;
+#   description : text;
+#   relating_geometric_tolerance : geometric_tolerance;
+#   related_geometric_tolerance : geometric_tolerance;
+#  WHERE
+#   WR1: NOT(name = 'composite tolerance') OR
+#        (('SHAPE_TOLERANCE_SCHEMA.POSITION_TOLERANCE' IN TYPEOF(relating_geometric_tolerance)) AND
+#         ('SHAPE_TOLERANCE_SCHEMA.POSITION_TOLERANCE' IN TYPEOF(related_geometric_tolerance))) OR
+#        (('SHAPE_TOLERANCE_SCHEMA.LINE_PROFILE_TOLERANCE' IN TYPEOF(relating_geometric_tolerance)) AND
+#         ('SHAPE_TOLERANCE_SCHEMA.LINE_PROFILE_TOLERANCE' IN TYPEOF(related_geometric_tolerance))) OR
+#        (('SHAPE_TOLERANCE_SCHEMA.SURFACE_PROFILE_TOLERANCE' IN TYPEOF(relating_geometric_tolerance)) AND
+#         ('SHAPE_TOLERANCE_SCHEMA.SURFACE_PROFILE_TOLERANCE' IN TYPEOF(related_geometric_tolerance)));
+# --description   b) For a geometric_tolerance_relationship with the name "composite tolerance"
+# --             the related and the relating subtype should be both either position_tolerance or line_profile_tolerance or surface_profile_tolerance
+# 
+#  WR2: NOT(name = 'composite tolerance') OR
+#   (relating_geometric_tolerance\geometric_tolerance.toleranced_shape_aspect :=:
+#   related_geometric_tolerance\geometric_tolerance.toleranced_shape_aspect);
+# --description c) For a geometric_tolerance_relationship with the name "composite tolerance"
+# --            the the related and relating geometric_tolerances shall refer to the same target.
+# 
+#  WR3: acyclic_geometric_tolerance_relationship(SELF, [related_geometric_tolerance],
+#        'SHAPE_TOLERANCE_SCHEMA.GEOMETRIC_TOLERANCE');
+# --The geometric_tolerance_relationship structure shall be acylic.
+# END_ENTITY;
+sso:geometricToleranceRelationship
+	ssmeta:stepImEntityMap "geometric_tolerance_relationship" ;
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImMapAttributeOrder ( rdfs:label rdfs:comment rdfs:domain rdfs:range ) .
+
+# ENTITY geometric_tolerance_with_datum_reference
+#   SUPERTYPE OF (ONEOF (angularity_tolerance,
+#                        circular_runout_tolerance,
+#                        coaxiality_tolerance,
+#                        concentricity_tolerance,
+#                        parallelism_tolerance,
+#                        perpendicularity_tolerance,
+#                        symmetry_tolerance,
+#                        total_runout_tolerance))
+#   SUBTYPE OF (geometric_tolerance);
+#   datum_system : SET[1:?] OF datum_system_or_reference;
+# WHERE
+#   WR1: (SIZEOF(QUERY(ds <* datum_system | 'SHAPE_TOLERANCE_SCHEMA.' + 'DATUM_SYSTEM' in TYPEOF(ds)))=0) OR (SIZEOF(datum_system)=1);
+# END_ENTITY;
+# WR1: If the attribute datum_system contains a datum_system there shall be only one and there shall be no datum_references. 
+sso:GeometricToleranceWithDatumReference
+	ssmeta:stepImEntityMap "geometric_tolerance_with_datum_reference" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance ;
+	ssmeta:stepImMapAttributeOrder ( sso:datumSystemX ) .
+
+# TYPE datum_system_or_reference = SELECT
+#    (datum_reference,   # deprectated !!
+#     datum_system);     # only 1 !!
+# END_TYPE;
+
+sso:datumSystemX
+	ssmeta:stepDmMap "geometric_tolerance_with_datum_reference.datum_system" ;
+	a owl:ObjectProperty ;
+#	rdfs:subPropertyOf  ;
+	rdfs:domain  sso:GeometricToleranceWithDatumReference ;
+	rdfs:range sso:ListOfDatumSystem .
+
+# ENTITY geometric_tolerance_with_defined_area_unit
+#   SUBTYPE OF (geometric_tolerance_with_defined_unit);
+#   area_type : area_unit_type;  => sso:geometricToleranceWithDefinedAreaUnitType
+#   second_unit_size : OPTIONAL length_or_plane_angle_measure_with_unit_select; => sso:geometricToleranceWithDefinedUnitSize2
+# WHERE
+#   WR1: NOT (EXISTS(second_unit_size) XOR (area_type IN [area_unit_type.rectangular, area_unit_type.cylindrical, area_unit_type.spherical]));
+#   WR2: NOT(area_type = area_unit_type.cylindrical)
+# 	   OR  ('MEASURE_SCHEMA.LENGTH_MEASURE_WITH_UNIT' IN TYPEOF(unit_size))
+# 	   AND ('MEASURE_SCHEMA.PLANE_ANGLE_MEASURE_WITH_UNIT' IN TYPEOF(second_unit_size));
+#   WR3: NOT (area_type =  area_unit_type.rectangular)
+#        OR ('MEASURE_SCHEMA.LENGTH_MEASURE_WITH_UNIT' IN TYPEOF(unit_size))
+# 	   AND ('MEASURE_SCHEMA.LENGTH_MEASURE_WITH_UNIT' IN TYPEOF(second_unit_size));
+#   WR4: NOT(area_type = area_unit_type.spherical)
+# 	   OR  ('MEASURE_SCHEMA.PLANE_ANGLE_MEASURE_WITH_UNIT' IN TYPEOF(unit_size))
+# 	   AND ('MEASURE_SCHEMA.PLANE_ANGLE_MEASURE_WITH_UNIT' IN TYPEOF(second_unit_size));
+#   WR5: NOT(area_type =  area_unit_type.spherical)
+# 	   OR  (SIZEOF(QUERY (tz <* USEDIN(SELF,'SHAPE_TOLERANCE_SCHEMA.TOLERANCE_ZONE.DEFINING_TOLERANCE') |
+# 	       ('SHAPE_TOLERANCE_SCHEMA.ORIENTED_TOLERANCE_ZONE' IN TYPEOF(tz))
+# 	       )) <> 0 );
+# END_ENTITY;
+sso:GeometricToleranceWithDefinedUnitAreaSize
+	ssmeta:stepImEntityMap "geometric_tolerance_with_defined_area_unit" ;
+	rdf:type owl:Class , ssmeta:DummyStepIrClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithDefinedUnit ;
+	ssmeta:stepImMapAttributeOrder ( sso:geometricToleranceWithDefinedAreaUnitType sso:geometricToleranceWithDefinedUnitSize2 ) .
+
+sso:geometricToleranceWithDefinedAreaUnitType
+	ssmeta:stepImAttributeMap "geometric_tolerance_with_defined_area_unit.area_type" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:subPropertyOf lci:partOf ;
+	rdfs:domain  sso:GeometricToleranceWithDefinedUnitAreaSize ;
+	rdfs:range sso:AreaUnitType .
+
+sso:geometricToleranceWithDefinedUnitSize2
+	ssmeta:stepImAttributeMap "geometric_tolerance_with_defined_area_unit.second_unit_size" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:subPropertyOf lci:partOf ;
+	rdfs:domain  sso:GeometricToleranceWithDefinedUnitAreaSize ;
+	rdfs:range sso:LengthOrAngle .
+
+# ENTITY geometric_tolerance_with_defined_unit
+#   SUBTYPE OF (geometric_tolerance);
+#   unit_size : length_or_plane_angle_measure_with_unit_select; => sso:geometricToleranceWithDefinedUnitSize
+# WHERE
+#   WR1: ('NUMBER' IN TYPEOF (unit_size\measure_with_unit.value_component)) AND (unit_size\measure_with_unit.value_component > 0.0);
+# END_ENTITY;
+# TBD
+sso:GeometricToleranceWithDefinedUnit
+	ssmeta:stepImEntityMap "geometric_tolerance_with_defined_unit" ;
+	rdf:type owl:Class , ssmeta:DummyStepIrClass ;
+	rdfs:subClassOf sso:GeometricTolerance ;
+	ssmeta:stepImMapAttributeOrder ( sso:geometricToleranceWithDefinedUnitSize ) .
+
+sso:geometricToleranceWithDefinedUnitSize
+	ssmeta:stepImAttributeMap "geometric_tolerance.magnitude" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:subPropertyOf lci:partOf ;
+	rdfs:domain  sso:GeometricToleranceWithDefinedUnit ;
+	rdfs:range sso:LengthOrAngle .
+
+# ENTITY geometric_tolerance_with_maximum_tolerance
+#   SUBTYPE OF (geometric_tolerance_with_modifiers);
+#   maximum_upper_tolerance : length_measure_with_unit; => geometricToleranceWithMaximumToleranceValue
+# WHERE
+#   WR1: (geometric_tolerance_modifier.maximum_material_requirement IN SELF\geometric_tolerance_with_modifiers.modifiers) OR (geometric_tolerance_modifier.least_material_requirement IN SELF\geometric_tolerance_with_modifiers.modifiers);
+#   WR2: (maximum_upper_tolerance\measure_with_unit.unit_component = SELF\geometric_tolerance.magnitude\measure_with_unit.unit_component) AND (maximum_upper_tolerance\measure_with_unit.value_component > SELF\geometric_tolerance.magnitude\measure_with_unit.value_component);
+# END_ENTITY;
+sso:GeometricToleranceWithMaximumTolerance
+	ssmeta:stepImEntityMap "geometric_tolerance_with_maximum_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithModifiers ;
+	ssmeta:stepImMapAttributeOrder ( sso:geometricToleranceWithMaximumToleranceValue ) .
+
+sso:geometricToleranceWithMaximumToleranceValue
+	ssmeta:stepImAttributeMap "geometric_tolerance.magnitude" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:subPropertyOf lci:partOf ;
+	rdfs:domain  sso:GeometricToleranceWithDefinedUnit ;
+	rdfs:range sso:LengthOrAngle .
+
+# ENTITY geometric_tolerance_with_modifiers
+#   SUBTYPE OF (geometric_tolerance);
+#   modifiers : SET[1:?] OF geometric_tolerance_modifier; => sso:geometricToleranceModifier
+# WHERE
+#   WR1: NOT (geometric_tolerance_modifier.circle_a IN modifiers) OR
+#            (('PRODUCT_PROPERTY_DEFINITION_SCHEMA.SHAPE_ASPECT' IN
+#             TYPEOF(SELF\geometric_tolerance.toleranced_shape_aspect)) AND
+#            (SELF\geometric_tolerance.toleranced_shape_aspect\shape_aspect.product_definitional =
+#             TRUE) OR
+#             ('SHAPE_DIMENSION_SCHEMA.DIMENSIONAL_SIZE' IN
+#             TYPEOF(SELF\geometric_tolerance.toleranced_shape_aspect)));
+# END_ENTITY;
+# --wr1 description: If circle-A is provided, then the toleranced_shape_aspect shall be on the surface.
+sso:GeometricToleranceWithModifiers
+	ssmeta:stepImEntityMap "geometric_tolerance_with_modifiers" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance ;
+	ssmeta:stepImMapAttributeOrder ( sso:geometricToleranceModifierX ) .
+
+sso:geometricToleranceModifierX
+	ssmeta:stepImAttributeMap "geometric_tolerance_with_modifiers.modifiers" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:subPropertyOf lci:partOf ;
+	rdfs:domain  sso:GeometricToleranceWithModifiers ;
+	rdfs:range sso:GeometricToleranceModifier .
+
+# TYPE gps_filtration_specification_target = EXTENSIBLE GENERIC_ENTITY SELECT
+#     (geometric_tolerance);
+# END_TYPE;
+
+# TYPE gps_filtration_type = EXTENSIBLE GENERIC_ENTITY SELECT
+#     (geometric_tolerance_modifier);
+# END_TYPE;
+
+#  ENTITY gps_filtration_specification;
+#    base_target : gps_filtration_specification_target; => sso:gpsFiltrationSpecificationBaseTarget
+#    filter_data : LIST [1:?] OF gps_filter;            => sso:gpsFiltrationSpecificationFilterData
+# -- WHERE
+# --  IP1 : The content of the data set is governed by ISO 1101 or other GPS standards.
+#  END_ENTITY;
+sso:GpsFiltrationSpecification
+	ssmeta:stepImEntityMap "gps_filtration_specification" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf lci:Individual ;
+	ssmeta:stepImMapAttributeOrder ( sso:gpsFiltrationSpecificationBaseTarget sso:gpsFiltrationSpecificationFilterData ) .
+sso:gpsFiltrationSpecificationBaseTarget
+	ssmeta:stepImAttributeMap "gps_filtration_specification." ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:GpsFiltrationSpecification ;
+	rdfs:range sso:GeometricTolerance .
+sso:gpsFiltrationSpecificationFilterData
+	ssmeta:stepImAttributeMap "gps_filtration_specification." ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:GpsFiltrationSpecification ;
+	rdfs:range sso:GpsFilter .
+
+# ENTITY gps_filter;
+#    filter_type : gps_filtration_type;
+#    filter_data : LIST [1:?] OF measure_with_unit;
+# INVERSE
+#     owner : gps_filtration_specification FOR filter_data;
+#  WHERE
+#   WR1 :  NOT ('SHAPE_TOLERANCE_SCHEMA.GEOMETRIC_TOLERANCE_WITH_MODIFIERS' IN TYPEOF(owner\gps_filtration_specification.base_target)) 
+#          OR
+#          (SIZEOF([
+#             geometric_tolerance_modifier.reference_minimax_feature_without_constraint,
+#             geometric_tolerance_modifier.reference_minimax_feature_with_external_material_constraint,
+#             geometric_tolerance_modifier.reference_minimax_feature_with_internal_material_constraint,
+#             geometric_tolerance_modifier.reference_least_square_feature_without_constraint,
+#             geometric_tolerance_modifier.reference_least_square_feature_with_external_material_constraint,
+#             geometric_tolerance_modifier.reference_least_square_feature_with_internal_material_constraint,
+#             geometric_tolerance_modifier.reference_minimum_circumscribed_feature,
+#             geometric_tolerance_modifier.reference_maximum_inscribed_feature,
+#             geometric_tolerance_modifier.total_range_deviations,
+#             geometric_tolerance_modifier.peak_height,
+#             geometric_tolerance_modifier.valley_depth,
+#             geometric_tolerance_modifier.standard_deviation ] *
+#             owner\gps_filtration_specification.base_target\geometric_tolerance_with_modifiers.modifiers) <> 0 );
+# --  IP1 : The content of the data set is governed by ISO 1101 or other GPS standards.
+#  END_ENTITY;
+sso:GpsFilter
+	ssmeta:stepImEntityMap "gps_filter" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf lci:Individual ;
+	ssmeta:stepImMapAttributeOrder ( sso:gpsFilterType sso:gpsFilterData ) .
+sso:gpsFilterType
+	ssmeta:stepImAttributeMap "gps_filter.filter_type" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:GpsFilter ;
+	rdfs:range sso:GeometricToleranceModifier .
+sso:gpsFilterData
+	ssmeta:stepImAttributeMap "gps_filter.filter_data" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:GpsFilter ;
+	rdfs:range qau:Length .
+
+# ENTITY limits_and_fits;
+#   form_variance : label; => sso:limitsAndFitsFormVariance
+#   zone_variance : label; => sso:limitsAndFitsZoneVariance
+#   grade : label;         => sso:limitsAndFitsGrade
+#   source : text;         => sso:limitsAndFitsSource
+# END_ENTITY;
+sso:LimitsAndFits
+	ssmeta:stepImEntityMap "limits_and_fits" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf lci:Individual ;
+	ssmeta:stepImMapAttributeOrder ( sso:GeometricToleranceModifier ) .
+sso:limitsAndFitsFormVariance
+	ssmeta:stepImAttributeMap "limits_and_fits.form_variance" ;
+	a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:LimitsAndFits ;
+	rdfs:range xsd:string  .
+sso:limitsAndFitsZoneVariance
+	ssmeta:stepImAttributeMap "limits_and_fits.zone_variance" ;
+	a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:LimitsAndFits ;
+	rdfs:range xsd:string  .
+sso:limitsAndFitsGrade
+	ssmeta:stepImAttributeMap "limits_and_fits.grade" ;
+	a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:LimitsAndFits ;
+	rdfs:range xsd:string  .
+sso:limitsAndFitsSource
+	ssmeta:stepImAttributeMap "limits_and_fits.source" ;
+	a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:LimitsAndFits ;
+	rdfs:range xsd:string  .
+
+# ENTITY modified_geometric_tolerance
+#   SUBTYPE OF (geometric_tolerance);
+#   modifier : limit_condition;
+# END_ENTITY;
+# => deprecated
+
+# ENTITY non_uniform_zone_definition
+#   SUBTYPE OF (tolerance_zone_definition);
+# END_ENTITY;
+sso:NonUniformToleranceZoneDefinition
+	ssmeta:stepImEntityMap "non_uniform_zone_definition" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ToleranceZoneDefinition .
+
+# ENTITY oriented_tolerance_zone
+#   SUBTYPE OF (tolerance_zone_with_datum);
+#   orientation : oriented_tolerance_zone_type;
+#   angle : OPTIONAL plane_angle_measure_with_unit;
+# WHERE
+#   WR1 : (orientation <> oriented_tolerance_zone_type.angular) XOR EXISTS(angle);
+# END_ENTITY;
+sso:OrientedToleranceZone
+	ssmeta:stepImEntityMap "oriented_tolerance_zone" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ToleranceZoneWithDatumSystem ;
+	ssmeta:stepImMapAttributeOrder ( sso:orientedToleranceZoneOrientation sso:orientedToleranceZoneAngle ) .
+sso:orientedToleranceZoneOrientation
+	ssmeta:stepImAttributeMap "oriented_tolerance_zone.orientation" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:OrientedToleranceZone ;
+	rdfs:range sso:OrientedToleranceZoneType  .
+sso:orientedToleranceZoneAngle
+	ssmeta:stepImAttributeMap "oriented_tolerance_zone." ;
+	a owl:DatatypeProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:OrientedToleranceZone ;
+	rdfs:range xsd:double  .
+
+# ENTITY plus_minus_tolerance;
+#   range : tolerance_method_definition;                => sso:plusMinusToleranceRange
+#   toleranced_dimension : dimensional_characteristic;  => sso:plusMinusToleranceDimension
+# UNIQUE
+#   UR1: toleranced_dimension;
+# END_ENTITY;
+sso:PlusMinusTolerance
+	ssmeta:stepImEntityMap "plus_minus_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf lci:Individual ;
+	ssmeta:stepImMapAttributeOrder ( sso:plusMinusToleranceRange sso:plusMinusToleranceDimension ) .
+sso:plusMinusToleranceRange
+	ssmeta:stepImAttributeMap "oriented_tolerance_zone.orientation" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:PlusMinusTolerance ;
+	rdfs:range sso:ToleranceMethodDefinition  .
+sso:plusMinusToleranceDimension
+	ssmeta:stepImAttributeMap "oriented_tolerance_zone.orientation" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:PlusMinusTolerance ;
+	rdfs:range sso:OrientedToleranceZoneType  .
+
+# ENTITY projected_zone_definition
+#   SUBTYPE OF (tolerance_zone_definition);
+#   projection_end : shape_aspect;               => sso:projectedToleranceZoneDefinitionEnd
+#   projected_length : length_measure_with_unit; => sso:projectedToleranceZoneDefinitionLength
+# WHERE
+#   WR1: ('NUMBER' IN TYPEOF (projected_length\measure_with_unit.value_component)) AND (projected_length\measure_with_unit.value_component > 0.0);
+#   WR2: (derive_dimensional_exponents (projected_length\measure_with_unit.unit_component)= dimensional_exponents(1,0,0,0,0,0,0));
+# END_ENTITY;
+sso:ProjectedToleranceZoneDefinition
+	ssmeta:stepImEntityMap "projected_zone_definition" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ToleranceZoneDefinition ;
+	ssmeta:stepImMapAttributeOrder ( sso:plusMinusToleranceRange sso:plusMinusToleranceDimension ) .
+sso:projectedToleranceZoneDefinitionEnd
+	ssmeta:stepImAttributeMap "oriented_tolerance_zone.orientation" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:ProjectedToleranceZoneDefinition ;
+	rdfs:range sso:ShapeElement  .
+sso:projectedToleranceZoneDefinitionLength
+	ssmeta:stepImAttributeMap "oriented_tolerance_zone.orientation" ;
+	a owl:ObjectProperty , owl:FunctionalProperty ;
+	rdfs:domain  sso:ProjectedToleranceZoneDefinition ;
+	rdfs:range qau:Length  .
+
+# ENTITY projected_zone_definition_with_offset
+#   SUBTYPE OF (projected_zone_definition);
+#   offset : length_measure_with_unit;
+# END_ENTITY;
+sso:ProjectedToleranceZoneDefinitionWithOffset
+	ssmeta:stepImEntityMap "projected_zone_definition_with_offset" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ProjectedToleranceZoneDefinition .
+
+# ENTITY runout_zone_definition
+#   SUBTYPE OF (tolerance_zone_definition);
+#   orientation : runout_zone_orientation;
+# END_ENTITY;
+sso:RunoutToleranceZoneDefinition
+	ssmeta:stepImEntityMap "runout_zone_definition" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ToleranceZoneDefinition ;
+	ssmeta:stepImMapAttributeOrder ( sso:runoutToleranceZoneDefinitionOrientation ) .
+sso:runoutToleranceZoneDefinitionOrientation
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "tolerance_zone.form" ;
+	rdfs:domain sso:RunoutToleranceZoneDefinition ;
+	rdfs:range sso:RunoutToleranceZoneOrientation .
+
+# ENTITY runout_zone_orientation;
+#   angle : plane_angle_measure_with_unit;  => sso:runoutToleranceZoneOrientationAngle
+# END_ENTITY;
+sso:RunoutToleranceZoneOrientation
+	ssmeta:stepImEntityMap "runout_zone_orientation" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf lci:Individual ;
+	ssmeta:stepImMapAttributeOrder ( sso:runoutToleranceZoneOrientationAngle ) .
+sso:runoutToleranceZoneOrientationAngle
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "runout_zone_orientation.angle" ;
+	rdfs:domain sso:RunoutToleranceZoneOrientation ;
+	rdfs:range xsd:double .
+
+# ENTITY runout_zone_orientation_reference_direction
+#   SUBTYPE OF (runout_zone_orientation);
+#   orientation_defining_relationship : shape_aspect_relationship;
+# END_ENTITY;
+sso:RunoutToleranceZoneOrientationReferenceDirection
+	ssmeta:stepImEntityMap "runout_zone_orientation_reference_direction" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf lci:Individual ;
+	ssmeta:stepImMapAttributeOrder ( sso:runoutToleranceZoneOrientationReferenceDirectionRelationship ) .
+sso:runoutToleranceZoneOrientationReferenceDirectionRelationship
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "runout_zone_orientation_reference_direction.orientation_defining_relationship" ;
+	rdfs:domain sso:RunoutToleranceZoneOrientationReferenceDirection ;
+	rdfs:range sso:shapeElementRelationship .  # PUNNING  needed !
+
+# ENTITY tolerance_value;
+#   lower_bound : measure_with_unit;
+#   upper_bound : measure_with_unit;
+# DERIVE
+#   ubvc : REAL := upper_bound\measure_with_unit.value_component;
+#   lbvc : REAL := lower_bound\measure_with_unit.value_component;
+# WHERE
+#   WR1: ubvc > lbvc;
+#   WR2: upper_bound\measure_with_unit.unit_component = lower_bound\measure_with_unit.unit_component;
+# END_ENTITY;
+# TO BE CONVERTED TO QAU Lower/Upper
+sso:ToleranceValue
+	ssmeta:stepImEntityMap "tolerance_value" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf lci:Individual ;
+	ssmeta:stepImMapAttributeOrder ( sso:toleranceValueLowerBound sso:toleranceValueUpperBound ) .
+sso:toleranceValueLowerBound
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "tolerance_value.lower_bound" ;
+	rdfs:domain sso:ToleranceValue ;
+	rdfs:range qau:Length .
+sso:toleranceValueUpperBound
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "tolerance_value.upper_bound" ;
+	rdfs:domain sso:ToleranceValue ;
+	rdfs:range qau:Length .
+
+# ENTITY tolerance_with_statistical_distribution;
+#   associated_tolerance : shape_tolerance_select;                  => sso:ShapeToleranceSelect
+#   tolerance_allocation : statistical_distribution_for_tolerance;  => rep:StatisticalDistributionForTolerance
+# END_ENTITY;
+sso:toleranceWithStatisticalDistribution
+	ssmeta:stepImEntityMap "tolerance_with_statistical_distribution" ;
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImMapAttributeOrder ( rdfs:domain rdfs:range ) .
+
+# ENTITY tolerance_zone
+#   SUBTYPE OF (shape_aspect);
+#   defining_tolerance : SET[1:?] OF tolerance_zone_target;
+#   form : tolerance_zone_form;
+# END_ENTITY;
+sso:ToleranceZoneShapeElement
+	ssmeta:stepImEntityMap "tolerance_zone" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeElement ;
+	ssmeta:stepImMapAttributeOrder ( sso:toleranceZoneDefiningTolerance sso:toleranceZoneFormX ) .
+sso:toleranceZoneDefiningTolerance
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "tolerance_zone.defining_tolerance" ;
+	rdfs:domain sso:ToleranceZoneShapeElement ;
+	rdfs:range sso:ToleranceZoneTarget .
+sso:toleranceZoneFormX
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "tolerance_zone.form" ;
+	rdfs:domain sso:ToleranceZoneShapeElement ;
+	rdfs:range sso:ToleranceZoneForm .
+
+# ENTITY tolerance_zone_definition
+#   SUPERTYPE OF (ONEOF (projected_zone_definition,
+#                        non_uniform_zone_definition,
+#                        runout_zone_definition));
+#   zone : tolerance_zone;                  => sso:toleranceZoneDefinitionZone
+#   boundaries : SET[0:?] OF shape_aspect;  => SET ?? sso:toleranceZoneDefinitionBoundaries
+# END_ENTITY;
+sso:ToleranceZoneDefinition
+	ssmeta:stepImEntityMap "tolerance_zone_definition" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:Aspect ;
+	ssmeta:stepImMapAttributeOrder ( sso:toleranceZoneDefinitionZone sso:toleranceZoneDefinitionBoundaries ) .
+sso:toleranceZoneDefinitionZone
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "tolerance_zone_definition.zone" ;
+	rdfs:domain sso:ToleranceZoneDefinition ;
+	rdfs:range sso:ToleranceZoneForm .
+sso:toleranceZoneDefinitionBoundaries
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "tolerance_zone_definition.boundaries" ;
+	rdfs:domain sso:ToleranceZoneDefinition ;
+	rdfs:range sso:ShapeElement .
+
+# ENTITY tolerance_zone_form;
+#   name : label;   => rdfs:label
+# END_ENTITY;
+sso:ToleranceZoneForm
+	ssmeta:stepImEntityMap "tolerance_zone_form" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf lci:Individual ;
+	ssmeta:stepImMapAttributeOrder ( rdfs:label ) .
+
+# ENTITY tolerance_zone_with_datum
+#   SUPERTYPE OF (ONEOF (directed_tolerance_zone, oriented_tolerance_zone))
+#   SUBTYPE OF (tolerance_zone);
+#   datum_reference : datum_system; # -> sso:toleranceZoneWithDatumSystemReference
+# END_ENTITY;
+sso:ToleranceZoneWithDatumSystem
+	ssmeta:stepImEntityMap "tolerance_zone_with_datum" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ToleranceZoneShapeElement ;
+	ssmeta:stepImMapAttributeOrder ( sso:toleranceZoneWithDatumSystemReference ) .
+sso:toleranceZoneWithDatumSystemReference
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "tolerance_zone_definition.boundaries" ;
+	rdfs:domain sso:ToleranceZoneWithDatumSystem ;
+	rdfs:range sso:DatumSystem .
+
+# ENTITY unequally_disposed_geometric_tolerance
+#   SUBTYPE OF (geometric_tolerance);
+#   displacement : length_measure_with_unit; => sso:unequallyDisposedGeometricToleranceDisplacement
+# WHERE
+#   WR1: 'NUMBER' IN TYPEOF(displacement\measure_with_unit.value_component);
+# END_ENTITY;
+sso:UnequallyDisposedGeometricTolerance
+	ssmeta:stepImEntityMap "unequally_disposed_geometric_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance ;
+	ssmeta:stepImMapAttributeOrder ( sso:unequallyDisposedGeometricToleranceDisplacement ) .
+sso:unequallyDisposedGeometricToleranceDisplacement
+	rdf:type owl:ObjectProperty ;
+	ssmeta:stepImAttributeMap "unequally_disposed_geometric_tolerance.displacement" ;
+	rdfs:domain sso:UnequallyDisposedGeometricTolerance ;
+	rdfs:range qau:Length .
+
+# ################# AIC519 geometric_tolerances ################
+
+# SCHEMA aic_geometric_tolerances;
+
+# ENTITY angularity_tolerance                             
+#   SUBTYPE OF (geometric_tolerance_with_datum_reference);
+# END_ENTITY;      
+sso:AngularityTolerance
+	ssmeta:stepImEntityMap "angularity_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithDatumReference .
+
+# ENTITY circular_runout_tolerance                                                               
+#   SUBTYPE OF (geometric_tolerance_with_datum_reference);# 
+# END_ENTITY;
+sso:CircularRunoutTolerance
+	ssmeta:stepImEntityMap "circular_runout_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithDatumReference .
+
+# ENTITY coaxiality_tolerance
+#   SUBTYPE OF (geometric_tolerance_with_datum_reference);
+# END_ENTITY;
+sso:CoaxialityTolerance
+	ssmeta:stepImEntityMap "coaxiality_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithDatumReference .
+
+# ENTITY common_datum
+#   SUBTYPE OF (composite_shape_aspect, datum);
+# WHERE
+#   WR1: SIZEOF(SELF\composite_shape_aspect.component_relationships) = 2;
+#   WR2: SIZEOF(QUERY(sar
+#                     <* SELF\composite_shape_aspect.component_relationships
+#                     | NOT (('AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.DATUM' IN
+#                             TYPEOF(sar.related_shape_aspect)) AND
+#                            NOT ('AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.COMMON_DATUM' IN
+#                                 TYPEOF(sar.related_shape_aspect))))) =
+#        0;
+# END_ENTITY;
+
+# ENTITY concentricity_tolerance
+#   SUBTYPE OF (geometric_tolerance_with_datum_reference);
+# END_ENTITY;
+sso:ConcentricityTolerance
+	ssmeta:stepImEntityMap "concentricity_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithDatumReference .
+
+# ENTITY cylindricity_tolerance
+#   SUBTYPE OF (geometric_tolerance);
+# WHERE
+#   WR1: NOT ('AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.GEOMETRIC_TOLERANCE_WITH_DATUM_REFERENCE' IN TYPEOF(SELF));
+# END_ENTITY;
+sso:CylindricityTolerance
+	ssmeta:stepImEntityMap "cylindricity_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance .
+
+# ENTITY flatness_tolerance
+#   SUBTYPE OF (geometric_tolerance);
+# WHERE
+#   WR1: NOT ('AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.GEOMETRIC_TOLERANCE_WITH_DATUM_REFERENCE' IN TYPEOF(SELF));
+# END_ENTITY;
+sso:FlatnessTolerance
+	ssmeta:stepImEntityMap "flatness_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance .
+
+# ENTITY line_profile_tolerance
+#   SUBTYPE OF (geometric_tolerance);
+# END_ENTITY;
+sso:LineProfileTolerance
+	ssmeta:stepImEntityMap "line_profile_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance .
+
+# ENTITY parallelism_tolerance
+#   SUBTYPE OF (geometric_tolerance_with_datum_reference);
+# END_ENTITY;
+sso:ParallelismTolerance
+	ssmeta:stepImEntityMap "parallelism_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithDatumReference .
+
+# ENTITY perpendicularity_tolerance
+#   SUBTYPE OF (geometric_tolerance_with_datum_reference);
+# END_ENTITY;
+sso:PerpendicularityTolerance
+	ssmeta:stepImEntityMap "perpendicularity_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithDatumReference .
+
+# ENTITY position_tolerance
+#   SUBTYPE OF (geometric_tolerance);
+# END_ENTITY;
+sso:PositionTolerance
+	ssmeta:stepImEntityMap "position_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance .
+
+# ENTITY roundness_tolerance
+#   SUBTYPE OF (geometric_tolerance);
+# WHERE
+#   WR1: NOT ('AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.GEOMETRIC_TOLERANCE_WITH_DATUM_REFERENCE' IN TYPEOF(SELF));
+# END_ENTITY;
+sso:RoundnessTolerance
+	ssmeta:stepImEntityMap "roundness_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance .
+
+# ENTITY straightness_tolerance
+#   SUBTYPE OF (geometric_tolerance);
+# WHERE
+#   WR1: NOT ('AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF.GEOMETRIC_TOLERANCE_WITH_DATUM_REFERENCE' IN TYPEOF(SELF));
+# END_ENTITY;
+sso:StraightnessTolerance
+	ssmeta:stepImEntityMap "straightness_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance .
+
+# ENTITY surface_profile_tolerance
+#   SUBTYPE OF (geometric_tolerance);
+# END_ENTITY;
+sso:SurfaceProfileTolerance
+	ssmeta:stepImEntityMap "surface_profile_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricTolerance .
+
+# ENTITY symmetry_tolerance
+#   SUBTYPE OF (geometric_tolerance_with_datum_reference);
+# END_ENTITY;
+sso:SymmetryTolerance
+	ssmeta:stepImEntityMap "symmetry_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithDatumReference .
+
+# ENTITY total_runout_tolerance
+#   SUBTYPE OF (geometric_tolerance_with_datum_reference);
+# END_ENTITY;
+sso:TotalRunoutTolerance
+	ssmeta:stepImEntityMap "total_runout_tolerance" ;
+	rdf:type owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:GeometricToleranceWithDatumReference .
+
+###########################################
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------
+# SCHEMA counterbore_countersink_schema '{iso standard 10303 part(113) version(2) object(1) counterbore_countersink_schema(1)}';
+
+# TYPE ccs_item_identified_representation_usage_definition = SELECT BASED_ON item_identified_representation_usage_definition WITH(
+#     characterized_object);
+# END_TYPE;
+
+# TYPE tolerance_value_or_limits_and_fits = SELECT (tolerance_value, -- modified
+#                limits_and_fits);
+# END_TYPE;
+
+# ENTITY basic_round_hole
+#   SUBTYPE OF (round_hole);
+#   depth              : OPTIONAL positive_length_measure_with_unit;
+#   depth_tolerance    : OPTIONAL tolerance_value;
+#   diameter           : positive_length_measure_with_unit;
+#   diameter_tolerance : OPTIONAL tolerance_value_or_limits_and_fits;
+#   placement          : shape_representation;
+#   through_hole       : BOOLEAN;
+# WHERE ...
+# END_ENTITY;
+
+# ENTITY basic_round_hole_occurrence
+#   SUBTYPE OF (shape_aspect_occurrence);
+#    SELF\shape_aspect_occurrence.definition : basic_round_hole;
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY basic_round_hole_occurrence_in_assembly
+#   SUBTYPE OF (basic_round_hole_occurrence);
+#   modified_components : LIST [1:?] OF UNIQUE multi_level_reference_designator;
+# -- Informal proposition:
+# --- The placement of the hole shall be on the surface of the first member of modified_components.
+# END_ENTITY;
+
+# SUBTYPE_CONSTRAINT round_hole_subtypes FOR round_hole;
+#   ONEOF (  
+#     basic_round_hole,
+#     explicit_round_hole);
+# END_SUBTYPE_CONSTRAINT;
+
+# ENTITY explicit_round_hole
+#   SUBTYPE OF (round_hole);
+#   depth              : positive_length_measure_with_unit;
+#   depth_tolerance    : OPTIONAL tolerance_value; -- modified
+#   diameter           : positive_length_measure_with_unit;
+#   diameter_tolerance : OPTIONAL tolerance_value_or_limits_and_fits;
+#   placement          : shape_representation;
+#  WHERE ...
+# END_ENTITY;
+
+# ENTITY explicit_composite_hole
+#   SUBTYPE OF (composite_hole);
+#   	   placement                  : shape_representation;
+#   INVERSE
+#     explicit_shape                : SET [0:?] OF item_identified_representation_usage for definition;
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY counterbore_hole_definition
+#   SUBTYPE OF (explicit_composite_hole);
+#        counterbore                : LIST [1:?] OF UNIQUE explicit_round_hole;
+#   	   drilled_hole_depth         : OPTIONAL positive_length_measure_with_unit;
+#    drilled_hole_depth_tolerance   : OPTIONAL tolerance_value;
+#   	   drilled_hole_diameter      : positive_length_measure_with_unit;
+#   drilled_hole_diameter_tolerance : OPTIONAL tolerance_value_or_limits_and_fits;
+#   	   through_hole				  : Boolean;
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY simplified_counterbore_hole_definition
+# 	SUBTYPE OF (counterbore_hole_definition);
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY counterbore_hole_occurrence
+#   SUBTYPE OF (shape_aspect_occurrence);
+#    SELF\shape_aspect_occurrence.definition : counterbore_hole_definition;
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY counterbore_hole_occurrence_in_assembly
+#   SUBTYPE OF (counterbore_hole_occurrence);
+#   modified_components : LIST [1:?] OF UNIQUE multi_level_reference_designator;
+# -- Informal proposition:
+# --- IP1: The placement of the hole shall be on the surface of the first member of modified_components.
+# END_ENTITY;
+
+# ENTITY countersink_hole_definition
+#   SUBTYPE OF (explicit_composite_hole);
+#      countersink_angle            : positive_plane_angle_measure_with_unit;
+#      countersink_angle_tolerance  : OPTIONAL tolerance_value;
+#      countersink_diameter         : positive_length_measure_with_unit;
+#  countersink_diameter_tolerance   : OPTIONAL tolerance_value_or_limits_and_fits;
+#  	   drilled_hole_depth         : OPTIONAL positive_length_measure_with_unit;
+#    drilled_hole_depth_tolerance   : OPTIONAL tolerance_value;
+#   	   drilled_hole_diameter      : positive_length_measure_with_unit;
+#   drilled_hole_diameter_tolerance : OPTIONAL tolerance_value_or_limits_and_fits;
+#      through_hole				  : Boolean;
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY simplified_countersink_hole_definition
+# 	SUBTYPE OF (countersink_hole_definition);
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY countersink_hole_occurrence
+#  SUBTYPE OF (shape_aspect_occurrence);
+#    SELF\shape_aspect_occurrence.definition : countersink_hole_definition;
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY countersink_hole_occurrence_in_assembly
+#   SUBTYPE OF (countersink_hole_occurrence);
+#   modified_components : LIST [1:?] OF UNIQUE multi_level_reference_designator;
+# -- Informal proposition:
+# --- IP1: The placement of the hole shall be on the surface of the first member of modified_components.
+# END_ENTITY;
+
+# ENTITY counterdrill_hole_definition
+#   SUBTYPE OF (explicit_composite_hole);
+#      counterbore                  : explicit_round_hole;
+#      counterdrill_angle           : positive_plane_angle_measure_with_unit;
+#      counterdrill_angle_tolerance : OPTIONAL tolerance_value;
+#  	   drilled_hole_depth     : OPTIONAL positive_length_measure_with_unit;
+#    drilled_hole_depth_tolerance   : OPTIONAL tolerance_value;
+#   	   drilled_hole_diameter  : positive_length_measure_with_unit;
+#   drilled_hole_diameter_tolerance : OPTIONAL tolerance_value_or_limits_and_fits;
+#      through_hole                 : Boolean;
+#   WHERE ...
+#  END_ENTITY;
+
+# ENTITY simplified_counterdrill_hole_definition
+# 	SUBTYPE OF (counterdrill_hole_definition);
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY counterdrill_hole_occurrence
+#  SUBTYPE OF (shape_aspect_occurrence);
+#    SELF\shape_aspect_occurrence.definition : counterdrill_hole_definition;
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY counterdrill_hole_occurrence_in_assembly
+#   SUBTYPE OF (counterdrill_hole_occurrence);
+#   modified_components : LIST [1:?] OF UNIQUE multi_level_reference_designator;
+# -- Informal proposition:
+# --- IP1: The placement of the hole shall be on the surface of the first member of modified_components.
+# END_ENTITY;
+
+# ENTITY spotface_definition
+#   SUBTYPE OF (explicit_round_hole);
+#         spotface_radius : positive_length_measure_with_unit;
+#         spotface_radius_tolerance : OPTIONAL tolerance_value;
+#  WHERE ...
+# END_ENTITY;
+# 
+# ENTITY spotface_hole_definition
+#   SUBTYPE OF (counterbore_hole_definition);
+#   SELF\counterbore_hole_definition.counterbore RENAMED spotface : LIST [1:?] OF UNIQUE spotface_definition;
+# END_ENTITY;
+
+# ENTITY simplified_spotface_hole_definition
+# 	SUBTYPE OF (spotface_hole_definition, simplified_counterbore_hole_definition);
+# END_ENTITY;
+
+# ENTITY spotface_occurrence
+#   SUBTYPE OF (counterbore_hole_occurrence);
+#    SELF\counterbore_hole_occurrence.definition   : spotface_hole_definition;
+# END_ENTITY;
+
+# ENTITY spotface_occurrence_in_assembly
+#   SUBTYPE OF (counterbore_hole_occurrence_in_assembly);
+#    SELF\counterbore_hole_occurrence.definition   : spotface_hole_definition;
+# END_ENTITY;
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------
+# SCHEMA machining_feature_schema '{iso standard 10303 part(113) version(1) object(1) machining_feature_schema(2)}';
+
+# TYPE machining_feature_definition = SELECT (
+#   boss,
+#   compound_feature,
+#   externally_defined_feature_definition,
+#   flat_face,
+#   gear,
+#   marking,
+#   outer_round,
+#   outside_profile,
+#   pocket,
+#   protrusion,
+#   removal_volume,
+#   replicate_feature,
+#   revolved_profile,
+#   rib_top,
+#   round_hole,
+#   rounded_end,
+#   spherical_cap,
+#   step,
+#   slot,
+#   thread,
+#   turned_knurl);
+# END_TYPE;  
+
+# ENTITY applied_area
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- applied_area
+
+# ENTITY boss
+#   SUBTYPE OF (feature_definition);
+#    WHERE   ...
+# END_ENTITY;  -- Boss
+sso:Boss
+	ssmeta:stepImEntityMap "boss" ;
+	a owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeFeatureDefinition ;
+	ssmeta:stepImMapAttributeOrder ( ) .
+
+# ENTITY boss_top
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- boss_top  
+
+# ENTITY chamfer
+#   SUBTYPE OF (transition_feature);
+#    WHERE ...
+# END_ENTITY; -- chamfer
+
+# ENTITY chamfer_offset
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- chamfer_offset
+
+# ENTITY circular_pattern
+#   SUBTYPE OF (replicate_feature);
+#    WHERE ...
+# END_ENTITY; -- circular_pattern
+ 
+# ENTITY circular_closed_profile
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- circular_closed_profile
+
+# ENTITY closed_path_profile
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- closed_path_profile
+
+# ENTITY composite_hole
+#   SUBTYPE OF (compound_feature);
+#    WHERE ...
+# END_ENTITY; -- composite_hole
+ 
+# ENTITY compound_feature
+#   SUBTYPE OF (feature_definition);
+#      WHERE 
+# END_ENTITY;  -- compound_feature
+sso:CompoundFeature
+	ssmeta:stepImEntityMap "compound_feature" ;
+	a owl:Class , ssmeta:MainClass ;
+	rdfs:subClassOf sso:ShapeFeatureDefinition ;
+	ssmeta:stepImMapAttributeOrder ( ) .
+
+# ENTITY direction_shape_representation
+#   SUBTYPE OF (shape_representation);
+#    WHERE ...
+# END_ENTITY; -- direction_shape_representation
+ 
+# ENTITY edge_round
+#   SUBTYPE OF (transition_feature);
+# WHERE ...
+# END_ENTITY; -- edge_round
+
+# ENTITY externally_defined_feature_definition
+#   SUBTYPE OF (feature_definition, externally_defined_item);
+#    WHERE ...
+# END_ENTITY; -- externally_defined_feature_definition
+
+# ENTITY face_shape_representation
+#   SUBTYPE OF (shape_representation);
+#    WHERE ...
+# END_ENTITY; -- face_shape_representation 
+   
+# ENTITY feature_component_definition
+#   SUBTYPE OF (characterized_object);
+#     ENTITY characterized_object;
+#		name : label;
+#		description : OPTIONAL text;
+#	  END_ENTITY; 
+#    WHERE ...
+# END_ENTITY; -- feature_component_definition
+
+# ENTITY feature_component_relationship
+#   SUPERTYPE OF (ONEOF (pattern_omit_membership,pattern_offset_membership))
+#   SUBTYPE OF (shape_aspect_relationship);
+#    WHERE ...
+# END_ENTITY; -- feature_component_relationship
+
+# ENTITY feature_pattern
+#   SUBTYPE OF (replicate_feature);
+#    WHERE ...
+# END_ENTITY; -- feature_pattern
+
+# ENTITY fillet
+#   SUBTYPE OF (transition_feature);
+#   WHERE ...
+# END_ENTITY;
+
+# ENTITY flat_face
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- flat_face  
+
+# ENTITY gear
+#   SUBTYPE OF (feature_definition);
+# WHERE ...
+# END_ENTITY;
+
+# ENTITY hole_bottom
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+#  END_ENTITY; -- hole_bottom
+
+# ENTITY linear_profile
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- linear_profile
+ 
+# ENTITY location_shape_representation
+#   SUBTYPE OF (shape_representation);
+# WHERE ...
+# END_ENTITY; -- location_shape_representation
+ 
+# ENTITY marking
+#   SUBTYPE OF (feature_definition);
+# WHERE ...
+# END_ENTITY; -- marking
+
+# ENTITY modified_pattern
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- modified_pattern
+ 
+# ENTITY ngon_closed_profile
+#   SUBTYPE OF (shape_aspect);
+# WHERE ...
+#   END_ENTITY;
+
+# ENTITY open_path_profile
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY;
+ 
+# ENTITY outer_round
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- outer_round
+ 
+# ENTITY outside_profile
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- outside_profile
+
+# ENTITY partial_circular_profile
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- partial_circular_profile
+      
+# ENTITY path_feature_component
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- path_feature_component
+     
+# ENTITY path_shape_representation
+#   SUBTYPE OF (shape_representation);
+#    WHERE ...
+# END_ENTITY; -- path_shape_representation 
+
+# ENTITY pattern_offset_membership
+#   SUBTYPE OF (feature_component_relationship);
+#    WHERE ...
+# END_ENTITY; -- pattern_offset_membership 
+
+# ENTITY pattern_omit_membership
+#   SUBTYPE OF (feature_component_relationship);
+#    WHERE ...
+# END_ENTITY; -- pattern_omit_membership
+ 
+# ENTITY planar_shape_representation
+#   SUBTYPE OF (shape_representation);
+# WHERE ...
+# END_ENTITY; 
+
+# ENTITY pocket
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- pocket  
+
+# ENTITY pocket_bottom
+#   SUBTYPE OF (shape_aspect);
+#   WHERE ...
+# END_ENTITY;  -- Pocket_bottom
+
+# ENTITY profile_floor
+#   SUBTYPE OF (shape_aspect);
+#   WHERE ...
+# END_ENTITY;   -- profile_floor
+
+# ENTITY protrusion
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- protrusion
+# 
+# ENTITY rectangular_closed_profile
+#   SUBTYPE OF (shape_aspect);
+#   WHERE ...
+# END_ENTITY;  -- rectangular_closed_profile
+
+# ENTITY rectangular_pattern
+#   SUBTYPE OF (replicate_feature);
+#    WHERE ...
+# END_ENTITY; -- rectangular_pattern
+
+# ENTITY removal_volume
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- removal_volume
+
+# ENTITY replicate_feature
+#     SUPERTYPE OF (ONEOF (circular_pattern, rectangular_pattern, 
+#       feature_pattern))
+#   SUBTYPE OF (feature_definition);
+#   WHERE ...
+# END_ENTITY;  -- replicate_feature
+
+# ENTITY revolved_profile
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- revolved_profile
+
+# ENTITY rib_top
+#    SUBTYPE OF (feature_definition);
+#   WHERE ...
+# END_ENTITY;    -- rib_top
+
+# ENTITY rib_top_floor
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY;  -- rib_top_floor
+
+# ENTITY round_hole
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- round_hole
+
+# ENTITY rounded_end
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- rounded_end
+
+# ENTITY rounded_u_profile
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- rounded_u_profile
+
+# ENTITY shape_defining_relationship
+#   SUBTYPE OF (shape_aspect_relationship);
+# END_ENTITY;
+
+# ENTITY spherical_cap
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- spherical_cap
+
+# ENTITY square_u_profile
+#   SUBTYPE OF (shape_aspect);
+#   WHERE ...
+# END_ENTITY; -- Square_U_profile
+
+# ENTITY step
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- step
+
+#   ENTITY slot
+#     SUBTYPE OF (feature_definition);
+#     WHERE
+#   END_ENTITY; -- slot 
+
+# ENTITY slot_end
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- slot_end
+
+# ENTITY taper
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- taper
+
+# ENTITY tee_profile
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY;   -- tee_profile
+
+# ENTITY thread
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+#  END_ENTITY;   -- thread
+
+# ENTITY thread_runout
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- thread_runout
+
+# ENTITY transition_feature
+#     SUPERTYPE OF (ONEOF (chamfer,edge_round,fillet))
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- transition_feature
+
+# ENTITY turned_knurl
+#   SUBTYPE OF (feature_definition);
+#    WHERE ...
+# END_ENTITY; -- turned_knurl
+ 
+# ENTITY vee_profile
+#   SUBTYPE OF (shape_aspect);
+#    WHERE ...
+# END_ENTITY; -- vee_profile
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------
+# SCHEMA mechanical_design_schema '{iso standard 10303 part(113) version(2) object(1) mechanical_design_schema(3)}';
+
+# TYPE annotation_placeholder_occurrence_role = ENUMERATION OF
+#   (annotation_text,
+#    gps_data);
+# END_TYPE;
+
+#   TYPE md_draughting_callout_element = EXTENSIBLE GENERIC_ENTITY SELECT BASED_ON draughting_callout_element WITH
+#     (annotation_placeholder_occurrence);
+#   END_TYPE;
+
+# TYPE md_geometric_set_select = SELECT BASED_ON geometric_set_select WITH(
+#    annotation_text,
+#    placement,
+#    planar_box);
+# END_TYPE;
+
+# ENTITY draughting_model_item_association_with_placeholder
+#   SUBTYPE OF (draughting_model_item_association);
+# --  SELF\draughting_model_item_association.definition          : draughting_model_item_definition;
+#   SELF\draughting_model_item_association.used_representation : draughting_model;
+#   SELF\item_identified_representation_usage.identified_item  : draughting_callout;
+#   annotation_placeholder                                     : annotation_placeholder_occurrence;
+# END_ENTITY;
+
+# ENTITY pmi_requirement_item_association
+#   SUBTYPE OF (item_identified_representation_usage);
+#   requirement : characterized_object; 
+# END_ENTITY;
